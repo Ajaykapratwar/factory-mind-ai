@@ -83,7 +83,7 @@ def layout():
     mape_df = get_per_sku_mape_table()
     demand_df = get_demand_vs_actual()   # aggregate
 
-    rev_str = _fmt_num(kpis["total_revenue"], prefix="¤")
+    rev_str = _fmt_num(kpis["total_revenue"], prefix="$")
     units_str = _fmt_num(kpis["total_units_sold"], prefix="")
     acc_str = f"{kpis['forecast_accuracy_pct']:.1f}%" if kpis["forecast_accuracy_pct"] else "—"
     dos_str = f"{kpis['avg_days_of_supply']:.0f} days" if kpis["avg_days_of_supply"] else "—"
