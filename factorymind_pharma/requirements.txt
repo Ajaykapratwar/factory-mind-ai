@@ -9,3 +9,4 @@ dash-core-components>=2.0.0
 dash-html-components>=2.0.0
 plotly>=5.17.0
 pytest>=7.4.0
+streamlit>=1.0.0
