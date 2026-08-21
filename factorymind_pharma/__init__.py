@@ -1,0 +1,1 @@
+# factorymind_pharma package

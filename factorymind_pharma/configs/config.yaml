@@ -1,0 +1,62 @@
+# FactoryMind Pharma - Configuration
+# All paths are relative to the project root (factorymind_pharma/)
+
+data:
+  raw_dir: "../data"
+  processed_dir: "../data/processed"
+  outputs_dir: "../data/outputs"
+
+  files:
+    product_master:     "01_product_master.csv"
+    sales_demand:       "02_sales_demand.csv"
+    demand_factors:     "03_demand_factors.csv"
+    orders:             "04_orders.csv"
+    inventory:          "05_inventory.csv"
+    production:         "06_production.csv"
+    batch_manufacturing: "07_batch_manufacturing.csv"
+    quality_control:     "08_quality_control.csv"
+    machine_sensor_data: "09_machine_sensor_data.csv"
+    maintenance:        "10_maintenance.csv"
+    raw_materials:      "11_raw_materials.csv"
+    suppliers:          "12_suppliers.csv"
+    logistics:          "13_logistics.csv"
+    compliance:         "14_compliance.csv"
+    financials:         "15_financials.csv"
+
+split:
+  train_ratio: 0.80
+  val_ratio:   0.10
+  test_ratio:  0.10
+  # Chronological split - never shuffle; this is a time series
+  shuffle: false
+
+seed: 42
+
+model:
+  lightgbm:
+    n_estimators:    500
+    learning_rate:   0.05
+    num_leaves:      31
+    max_depth:       -1
+    min_child_samples: 20
+    subsample:       0.8
+    colsample_bytree: 0.8
+    reg_alpha:       0.1
+    reg_lambda:      0.1
+    random_state:    42
+    n_jobs:          -1
+    verbosity:       -1
+
+features:
+  lag_days:          [7, 28]
+  rolling_windows:   [7, 28]
+  demand_factor_cols:
+    - market_demand_index
+    - disease_season_index
+    - promotion_flag
+    - competitor_price
+
+dashboard:
+  port: 8050
+  debug: false
+  title: "FactoryMind Pharma - Control Tower"

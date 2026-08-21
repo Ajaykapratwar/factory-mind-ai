@@ -1,0 +1,53 @@
+/* FactoryMind Pharma — Design Tokens
+   Theme: Light, intentional, pharma/clinical — NOT default AI-generated
+   Palette: warm off-white base, ink text, muted teal accent, restraint.
+   All components consume these variables; no hardcoded hex values in components.
+*/
+
+:root {
+  /* ── Surfaces ─────────────────────────────────────────────── */
+  --bg:            #F6F3EE;     /* warm off-white — NOT pure white */
+  --surface:       #FDFBF7;     /* card/panel background */
+  --surface-alt:   #F0EDE7;     /* alternate surface (table rows, sidebar) */
+  --border:        #DDD9D1;     /* 1px borders — thin, not heavy */
+
+  /* ── Text ──────────────────────────────────────────────────── */
+  --text:          #1C1B1A;     /* near-black — NOT pure #000 */
+  --text-muted:    #6B6560;     /* secondary labels, metadata */
+  --text-xmuted:   #9C968E;     /* tertiary / disabled */
+
+  /* ── Accent (muted teal — clinical without being sterile-blue) */
+  --accent:        #2D7D7B;     /* primary accent */
+  --accent-muted:  #4D9E9C;     /* hover / lighter tonal variant */
+  --accent-pale:   #D6EEED;     /* very light accent for backgrounds */
+  --accent-dark:   #1A5250;     /* dark tonal for pressed/active */
+
+  /* ── Semantic ──────────────────────────────────────────────── */
+  --success:       #3D7A4F;
+  --success-pale:  #D8EDE0;
+  --warning:       #9A6B1A;
+  --warning-pale:  #FDF0D5;
+  --danger:        #8B2E2E;
+  --danger-pale:   #F5DADA;
+
+  /* ── Chart palette (derived from accent, 3 tonal variations) */
+  --chart-1:       #2D7D7B;
+  --chart-2:       #7AB5B4;
+  --chart-3:       #C45B3C;     /* terracotta for contrast */
+  --chart-4:       #6B5B8A;     /* plum for 4th series */
+  --chart-5:       #D4A843;     /* warm amber */
+
+  /* ── Typography ────────────────────────────────────────────── */
+  /* Numbers/data: DM Mono / system monospace for legibility */
+  --font-body:    'Inter', 'DM Sans', system-ui, -apple-system, sans-serif;
+  --font-heading: 'DM Serif Display', 'Playfair Display', Georgia, serif;
+  --font-mono:    'DM Mono', 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* ── Spacing / Radius / Shadow ─────────────────────────────── */
+  --radius-sm:    4px;
+  --radius-md:    8px;
+  --radius-lg:    12px;
+  --shadow-xs:    0 1px 2px rgba(28,27,26,0.06);
+  --shadow-sm:    0 1px 4px rgba(28,27,26,0.08), 0 0 1px rgba(28,27,26,0.04);
+  --shadow-md:    0 4px 12px rgba(28,27,26,0.10), 0 1px 3px rgba(28,27,26,0.06);
+}

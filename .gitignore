@@ -1,0 +1,33 @@
+# Environments
+venv/
+env/
+.env
+.venv/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Data & Outputs
+data/processed/
+data/outputs/
+*.parquet
+*.csv
+
+# .md files
+factorymind-pharma-phase0-1-spec.md
