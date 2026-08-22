@@ -26,9 +26,7 @@ from dashboard.components.charts import demand_vs_actual_chart, CHART_COLORS
 dash.register_page(__name__, path="/", name="Executive Summary")
 
 
-# ---------------------------------------------------------------------------
 # Helper to build KPI tiles
-# ---------------------------------------------------------------------------
 
 def _fmt_num(v, prefix="¤", suffix="", decimals=0):
     if v is None or (isinstance(v, float) and np.isnan(v)):
@@ -74,9 +72,7 @@ def _mape_table(df: pd.DataFrame, title: str, top: bool = True) -> html.Div:
     ], className="data-table")
 
 
-# ---------------------------------------------------------------------------
 # Layout (rendered once on page load)
-# ---------------------------------------------------------------------------
 
 def layout():
     kpis = get_kpi_summary()
@@ -99,7 +95,7 @@ def layout():
                        className="page-subtitle"),
             ], className="page-header"),
 
-            # ── KPI row ────────────────────────────────────────
+            # KPI row
             html.Div([
                 _kpi_card("Total Revenue", rev_str,
                           subtext="All products · 2021–2022", primary=True),
@@ -109,7 +105,7 @@ def layout():
                 _kpi_card("Stockout Events", stockout_str, "historical flag count"),
             ], className="kpi-grid"),
 
-            # ── Plan-vs-Actual chart ───────────────────────────
+            # Plan-vs-Actual chart
             html.Div([
                 html.Div([
                     html.Div("Demand — Plan vs Actual", className="card-title"),
@@ -119,7 +115,7 @@ def layout():
                           id="exec-demand-chart"),
             ], className="card", style={"marginBottom": "20px"}),
 
-            # ── Top/Bottom 5 SKU tables ─────────────────────────
+            # Top/Bottom 5 SKU tables
             html.Div([
                 html.Div([
                     html.Div([

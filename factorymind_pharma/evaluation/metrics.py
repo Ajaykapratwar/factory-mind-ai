@@ -16,9 +16,7 @@ logger = logging.getLogger(__name__)
 EPSILON = 1e-8  # guard against zero-demand division
 
 
-# ---------------------------------------------------------------------------
-# §5.1 Point-forecast accuracy metrics
-# ---------------------------------------------------------------------------
+# 5.1 Point-forecast accuracy metrics
 
 def compute_mae(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     return float(np.mean(np.abs(y_true - y_pred)))
@@ -90,9 +88,7 @@ def compute_mae_pct(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     return float(compute_mae(y_true, y_pred) / mean_actual * 100)
 
 
-# ---------------------------------------------------------------------------
-# §5.2 Bias metrics
-# ---------------------------------------------------------------------------
+# 5.2 Bias metrics
 
 def compute_bias_pct(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     """
@@ -122,9 +118,7 @@ def compute_rolling_bias(
     return s.rolling(window, min_periods=1).mean()
 
 
-# ---------------------------------------------------------------------------
-# §5.3 Probabilistic / Quantile metrics
-# ---------------------------------------------------------------------------
+# 5.3 Probabilistic / Quantile metrics
 
 def compute_pinball_loss(y_true: np.ndarray, y_pred: np.ndarray, q: float = 0.5) -> float:
     """
@@ -142,9 +136,7 @@ def compute_pinball_loss(y_true: np.ndarray, y_pred: np.ndarray, q: float = 0.5)
     return float(np.mean(loss))
 
 
-# ---------------------------------------------------------------------------
-# §5.4 Classification-style metrics (stockout_flag binary prediction)
-# ---------------------------------------------------------------------------
+# 5.4 Classification-style metrics (stockout_flag binary prediction)
 
 def compute_classification_metrics(y_true_bin: np.ndarray, y_pred_bin: np.ndarray) -> dict:
     """
@@ -159,9 +151,7 @@ def compute_classification_metrics(y_true_bin: np.ndarray, y_pred_bin: np.ndarra
     }
 
 
-# ---------------------------------------------------------------------------
-# §5.5 Acceptance thresholds
-# ---------------------------------------------------------------------------
+# 5.5 Acceptance thresholds
 
 THRESHOLDS = {
     "r2_min":          0.55,   # pharma demand is noisier than HVAC
@@ -208,9 +198,7 @@ def check_acceptance(metrics: dict) -> dict:
     return results
 
 
-# ---------------------------------------------------------------------------
 # Master compute function
-# ---------------------------------------------------------------------------
 
 def compute_regression_metrics(
     y_true: Union[np.ndarray, pd.Series],

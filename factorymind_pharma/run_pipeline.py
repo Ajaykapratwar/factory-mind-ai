@@ -55,9 +55,7 @@ def _resolve_paths(cfg: dict) -> dict:
     return {"raw": raw, "processed": proc, "outputs": out}
 
 
-# ===========================================================================
 # Phase 0 - Scaffold & Contracts
-# ===========================================================================
 
 def phase0_config_verify(cfg: dict) -> None:
     """Step 0.2 - verify config parses and contains required keys."""
@@ -78,9 +76,7 @@ def phase0_load_validate(cfg: dict, paths: dict):
     return dfs
 
 
-# ===========================================================================
 # Phase 1 - Foundation: Data Layer + Core Dashboards
-# ===========================================================================
 
 def phase1_build_feature_table(dfs: dict, paths: dict) -> pd.DataFrame:
     """Step 1.1 - build master feature table."""
@@ -106,25 +102,25 @@ def phase1_evaluate(forecast_result: dict, cfg: dict, paths: dict) -> pd.DataFra
     # Drop rows with null predictions
     test_valid = test_df.dropna(subset=["lgb_pred", "naive_pred"])
 
-    # -- Aggregate metrics: LightGBM --------------------------
+    # Aggregate metrics: LightGBM
     lgb_agg = compute_regression_metrics(
         test_valid["units_sold"].values,
         test_valid["lgb_pred"].values,
         label="LightGBM_aggregate"
     )
 
-    # -- Aggregate metrics: Naive ------------------------------
+    # Aggregate metrics: Naive
     naive_agg = compute_regression_metrics(
         test_valid["units_sold"].values,
         test_valid["naive_pred"].values,
         label="Naive_aggregate"
     )
 
-    # -- Per-SKU metrics ---------------------------------------
+    # Per-SKU metrics
     sku_metrics_lgb   = compute_per_sku_metrics(test_valid, actual_col="units_sold", pred_col="lgb_pred",   label="lgb")
     sku_metrics_naive = compute_per_sku_metrics(test_valid, actual_col="units_sold", pred_col="naive_pred", label="naive")
 
-    # -- Requirement: LGBMbeats naive on >= 60% of SKUs by MAPE --
+    # Requirement: LGBMbeats naive on >= 60% of SKUs by MAPE
     merged = sku_metrics_lgb[["product_id", "mape"]].rename(columns={"mape": "mape_lgb"}).merge(
         sku_metrics_naive[["product_id", "mape"]].rename(columns={"mape": "mape_naive"}),
         on="product_id"
@@ -133,10 +129,10 @@ def phase1_evaluate(forecast_result: dict, cfg: dict, paths: dict) -> pd.DataFra
     lgb_wins = (merged["mape_lgb"] < merged["mape_naive"]).sum()
     pct_wins = lgb_wins / len(merged) * 100 if len(merged) > 0 else 0
 
-    # -- Acceptance check --------------------------------------
+    # Acceptance check
     acceptance = check_acceptance(lgb_agg)
 
-    # -- Print summary -----------------------------------------
+    # Print summary
     print("\n" + "=" * 68)
     print("  EVALUATION REPORT - Phase 1 Baseline")
     print("=" * 68)
@@ -156,7 +152,7 @@ def phase1_evaluate(forecast_result: dict, cfg: dict, paths: dict) -> pd.DataFra
     print(f"\n  all_pass = {acceptance['all_pass']}")
     print("=" * 68)
 
-    # -- Save per-SKU report to CSV ----------------------------
+    # Save per-SKU report to CSV
     eval_df = sku_metrics_lgb.copy()
     eval_df = eval_df.merge(
         sku_metrics_naive[["product_id", "mape", "rmse", "mae"]].rename(
@@ -211,9 +207,7 @@ def phase1_verify_data_layer() -> None:
     print(f"    [OK]  get_inventory_status()     rows={len(inv):,}")
 
 
-# ===========================================================================
 # Main
-# ===========================================================================
 
 def main():
     t0 = time.time()
@@ -221,7 +215,7 @@ def main():
     print("  FactoryMind Pharma - Phase 0 + Phase 1 Pipeline")
     print("=" * 68)
 
-    # -- Phase 0 ---------------------------------------------
+    # Phase 0
     print("\n[ Phase 0 - Scaffold & Contracts ]")
 
     cfg = _load_config()
@@ -231,7 +225,7 @@ def main():
     print("\n  Step 0.3 - Loading all 15 source files...")
     dfs = phase0_load_validate(cfg, paths)
 
-    # -- Phase 1 ---------------------------------------------
+    # Phase 1
     print("\n[ Phase 1 - Foundation ]")
 
     print("\n  Step 1.1 - Building master feature table...")
@@ -246,7 +240,7 @@ def main():
     print("\n  Step 1.4 - Verifying data access layer...")
     phase1_verify_data_layer()
 
-    # -- Final summary ----------------------------------------
+    # Final summary
     elapsed = time.time() - t0
     print(f"\n{'='*68}")
     print(f"  [OK]  Pipeline completed in {elapsed:.1f}s")

@@ -19,9 +19,7 @@ from sklearn.preprocessing import LabelEncoder
 
 logger = logging.getLogger(__name__)
 
-# ---------------------------------------------------------------------------
 # Feature engineering helpers
-# ---------------------------------------------------------------------------
 
 def _add_time_features(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
@@ -69,9 +67,7 @@ def _encode_categoricals(df: pd.DataFrame, cat_cols: list) -> Tuple[pd.DataFrame
     return df, encoders
 
 
-# ---------------------------------------------------------------------------
 # Naive Seasonal Baseline
-# ---------------------------------------------------------------------------
 
 def naive_seasonal_forecast(df: pd.DataFrame, test_start: pd.Timestamp) -> pd.DataFrame:
     """
@@ -111,9 +107,7 @@ def naive_seasonal_forecast(df: pd.DataFrame, test_start: pd.Timestamp) -> pd.Da
     return pd.DataFrame(records)
 
 
-# ---------------------------------------------------------------------------
 # LightGBM Model
-# ---------------------------------------------------------------------------
 
 FEATURE_COLS = [
     "day_of_week", "month", "day_of_month", "week_of_year",
@@ -161,9 +155,8 @@ def run_forecast_pipeline(mft: pd.DataFrame, config: dict, outputs_dir: str) -> 
     mft["date"] = pd.to_datetime(mft["date"])
     mft = mft.sort_values("date")
 
-    # -----------------------------------------------------------------------
     # Chronological split
-    # -----------------------------------------------------------------------
+
     dates = mft["date"].sort_values().unique()
     n = len(dates)
     train_end_idx = int(n * config["split"]["train_ratio"])
@@ -182,9 +175,8 @@ def run_forecast_pipeline(mft: pd.DataFrame, config: dict, outputs_dir: str) -> 
     print(f"  Val:   {val_df['date'].min().date()} → {val_df['date'].max().date()}  ({len(val_df):,} rows)")
     print(f"  Test:  {test_df['date'].min().date()} → {test_df['date'].max().date()}  ({len(test_df):,} rows)")
 
-    # -----------------------------------------------------------------------
     # Naive Seasonal Forecast (on test set)
-    # -----------------------------------------------------------------------
+
     print("\n  Running naive seasonal forecast...")
     naive_preds = naive_seasonal_forecast(mft, test_start)
 
@@ -194,9 +186,8 @@ def run_forecast_pipeline(mft: pd.DataFrame, config: dict, outputs_dir: str) -> 
         on=["date", "product_id"], how="left"
     )
 
-    # -----------------------------------------------------------------------
     # LightGBM
-    # -----------------------------------------------------------------------
+
     print("  Building LightGBM features...")
 
     # Build features on the full dataset (sorted by product+date for lag integrity)
@@ -233,9 +224,8 @@ def run_forecast_pipeline(mft: pd.DataFrame, config: dict, outputs_dir: str) -> 
     test_feat_df = full_feat_df[full_feat_df["date"] > val_end].copy()
     test_feat_df["lgb_pred"] = y_test_pred
 
-    # -----------------------------------------------------------------------
     # Merge everything onto a combined test output
-    # -----------------------------------------------------------------------
+
     test_out = mft[mft["date"] > val_end][["date", "product_id", "units_sold"]].copy()
     test_out = test_out.merge(
         naive_preds[["date", "product_id", "naive_pred"]],

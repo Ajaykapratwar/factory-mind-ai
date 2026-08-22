@@ -21,9 +21,7 @@ def _cfg():
 
 cfg = _cfg()
 
-# ---------------------------------------------------------------------------
 # App init — multi-page
-# ---------------------------------------------------------------------------
 app = dash.Dash(
     __name__,
     use_pages=True,
@@ -35,9 +33,7 @@ app = dash.Dash(
 )
 server = app.server  # for production WSGI deployment
 
-# ---------------------------------------------------------------------------
 # Nav bar
-# ---------------------------------------------------------------------------
 
 def _nav_link(label, href):
     return dcc.Link(label, href=href, className="nav-link")
