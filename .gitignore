@@ -27,7 +27,6 @@ Thumbs.db
 data/processed/
 data/outputs/
 *.parquet
-*.csv
 
 # .md files
 factorymind-pharma-phase0-1-spec.md
