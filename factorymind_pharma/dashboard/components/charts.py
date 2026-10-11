@@ -46,13 +46,13 @@ def make_chart_layout(
         margin = dict(l=16, r=16, t=36 if title else 16, b=16)
 
     return dict(
-        title=dict(text=title, font=dict(family="DM Serif Display, Georgia, serif",
+        title=dict(text=title, font=dict(family="Inter, -apple-system, sans-serif",
                                           size=14, color=CHART_COLORS["text"])),
         height=height,
         paper_bgcolor=CHART_COLORS["bg"],
         plot_bgcolor=CHART_COLORS["bg"],
         margin=margin,
-        font=dict(family="Inter, DM Sans, system-ui", size=12, color=CHART_COLORS["text"]),
+        font=dict(family="Inter, -apple-system, sans-serif", size=12, color=CHART_COLORS["text"]),
         showlegend=show_legend,
         legend=dict(
             font=dict(size=11, color=CHART_COLORS["muted"]),

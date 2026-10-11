@@ -175,7 +175,7 @@ def layout():
             # ── Product drill-down ──────────────────────────────
             html.Div([
                 html.Div("Product Drill-Down", className="card-title",
-                         style={"marginBottom": "16px", "fontFamily": "DM Serif Display, Georgia, serif"}),
+                         style={"marginBottom": "16px"}),
 
                 html.Div([
                     html.Div("SELECT PRODUCT", className="filter-label"),

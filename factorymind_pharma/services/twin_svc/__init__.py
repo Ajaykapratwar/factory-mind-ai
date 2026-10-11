@@ -1,7 +1,8 @@
-# twin_svc — Digital Twin Service
-# STUB ONLY — Phase 2+ implementation. Do not add logic here in Phase 0-1.
-# This package exists so Phase 2 can import services.twin_svc without new plumbing.
 """
-Phase 2+ stub: Digital Twin Service.
-Will model production line states and simulate batch outcomes.
+Digital Twin Service (L2) per Spec Phase 4.
+Exposes DigitalTwinSimulator, FinancialIntelligence, and empirical samplers.
 """
+from factorymind_pharma.services.twin_svc.simulator import DigitalTwinSimulator
+from factorymind_pharma.services.twin_svc.financial import FinancialIntelligence
+
+__all__ = ["DigitalTwinSimulator", "FinancialIntelligence"]

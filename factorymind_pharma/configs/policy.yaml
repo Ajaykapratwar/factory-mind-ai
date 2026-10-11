@@ -1,0 +1,39 @@
+# FactoryMind AI (Pharma) - Policy & Decision Engine Configuration (§10.2, §10.3)
+
+rule_tiers:
+  block:
+    # Never auto-approved; QA role mandatory
+    audit_status: ["Major Deviation"]
+    release_status: ["FAIL"]
+    temperature_excursion_flag: 1
+  review:
+    # Human approval required
+    audit_status: ["Minor Deviation"]
+    release_status: ["RETEST"]
+    deviation_count_min: 2
+    supplier_risk_threshold: 65.0
+    delivery_delay_days_threshold: 5
+  auto_eligible:
+    # Requires confidence >= 0.80 for auto-execution
+    min_confidence: 0.80
+
+confidence:
+  weights:
+    ensemble_agreement: 0.45   # (1 - normalized spread across base models)
+    interval_precision: 0.35   # (1 - interval_width / (2 * forecast))
+    data_freshness: 0.20       # decay based on days since latest observation
+  freshness_half_life_days: 14.0
+
+rbac:
+  roles:
+    planner:
+      can_resolve: ["restock", "maintenance_pull_forward", "supplier_switch"]
+      cannot_resolve: ["batch_release", "BLOCK"]
+    qa_reviewer:
+      can_resolve: ["batch_release", "BLOCK", "REVIEW", "AUTO-ELIGIBLE", "restock", "maintenance_pull_forward", "supplier_switch"]
+    admin:
+      can_resolve: ["*"]
+
+audit:
+  db_path: "data/outputs/audit_log.db"
+  genesis_hash: "0000000000000000000000000000000000000000000000000000000000000000"

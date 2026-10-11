@@ -38,10 +38,9 @@
   --chart-5:       #D4A843;     /* warm amber */
 
   /* ── Typography ────────────────────────────────────────────── */
-  /* Numbers/data: DM Mono / system monospace for legibility */
-  --font-body:    'Inter', 'DM Sans', system-ui, -apple-system, sans-serif;
-  --font-heading: 'DM Serif Display', 'Playfair Display', Georgia, serif;
-  --font-mono:    'DM Mono', 'JetBrains Mono', 'Fira Code', monospace;
+  --font-body:    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-heading: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono:    'Inter', 'DM Mono', monospace;
 
   /* ── Spacing / Radius / Shadow ─────────────────────────────── */
   --radius-sm:    4px;

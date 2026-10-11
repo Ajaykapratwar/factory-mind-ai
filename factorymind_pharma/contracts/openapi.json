@@ -1,0 +1,1337 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "FactoryMind Pharma - Service Layer API",
+    "description": "Operational Service Boundaries for Sensing, Forecast, Digital Twin, Policy, and Control Tower.",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/healthz": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "summary": "Health Check",
+        "operationId": "health_check_healthz_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/readyz": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "summary": "Ready Check",
+        "operationId": "ready_check_readyz_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/decisions": {
+      "get": {
+        "tags": [
+          "Control Tower"
+        ],
+        "summary": "List Decisions",
+        "description": "List operational decisions in the approval queue.",
+        "operationId": "list_decisions_v1_decisions_get",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "tier",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tier"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DecisionRecord"
+                  },
+                  "title": "Response List Decisions V1 Decisions Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/decisions/{decision_id}": {
+      "get": {
+        "tags": [
+          "Control Tower"
+        ],
+        "summary": "Get Decision",
+        "operationId": "get_decision_v1_decisions__decision_id__get",
+        "parameters": [
+          {
+            "name": "decision_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Decision Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DecisionRecord"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/decisions/{decision_id}/resolve": {
+      "post": {
+        "tags": [
+          "Control Tower"
+        ],
+        "summary": "Resolve Decision",
+        "description": "Resolve a decision with role-based access control.\nPlanner attempting to resolve a QA-gated or BLOCK decision returns HTTP 403 Forbidden (\u00a710.4).",
+        "operationId": "resolve_decision_v1_decisions__decision_id__resolve_post",
+        "parameters": [
+          {
+            "name": "decision_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Decision Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveDecisionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DecisionRecord"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/audit/verify": {
+      "get": {
+        "tags": [
+          "Audit Chain"
+        ],
+        "summary": "Verify Audit Chain",
+        "description": "Recomputes full SHA-256 hash chain from genesis and reports any tampering.",
+        "operationId": "verify_audit_chain_v1_audit_verify_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditVerificationResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/audit/entries": {
+      "get": {
+        "tags": [
+          "Audit Chain"
+        ],
+        "summary": "Get Audit Entries",
+        "operationId": "get_audit_entries_v1_audit_entries_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/replay/status": {
+      "get": {
+        "tags": [
+          "Replay Clock"
+        ],
+        "summary": "Get Replay Status",
+        "operationId": "get_replay_status_v1_replay_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/replay/step": {
+      "post": {
+        "tags": [
+          "Replay Clock"
+        ],
+        "summary": "Step Replay Clock",
+        "operationId": "step_replay_clock_v1_replay_step_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/models/registry": {
+      "get": {
+        "tags": [
+          "Model Lifecycle"
+        ],
+        "summary": "Get Model Registry",
+        "operationId": "get_model_registry_v1_models_registry_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/models/promote": {
+      "post": {
+        "tags": [
+          "Model Lifecycle"
+        ],
+        "summary": "Promote Challenger",
+        "operationId": "promote_challenger_v1_models_promote_post",
+        "parameters": [
+          {
+            "name": "challenger_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "ensemble-challenger-v2",
+              "title": "Challenger Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/sensing/machine/{machine_id}": {
+      "get": {
+        "tags": [
+          "Sensing Service"
+        ],
+        "summary": "Get Sensing Telemetry",
+        "operationId": "get_sensing_telemetry_v1_sensing_machine__machine_id__get",
+        "parameters": [
+          {
+            "name": "machine_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Machine Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/forecast/{product_id}": {
+      "get": {
+        "tags": [
+          "Forecast Service"
+        ],
+        "summary": "Get Forecast Api",
+        "operationId": "get_forecast_api_v1_forecast__product_id__get",
+        "parameters": [
+          {
+            "name": "product_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Product Id"
+            }
+          },
+          {
+            "name": "horizon",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 30,
+              "title": "Horizon"
+            }
+          },
+          {
+            "name": "grain",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "daily",
+              "title": "Grain"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/policy/inventory/{product_id}": {
+      "get": {
+        "tags": [
+          "Policy Service"
+        ],
+        "summary": "Get Inventory Api",
+        "operationId": "get_inventory_api_v1_policy_inventory__product_id__get",
+        "parameters": [
+          {
+            "name": "product_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Product Id"
+            }
+          },
+          {
+            "name": "warehouse_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Warehouse Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/twin/simulate": {
+      "post": {
+        "tags": [
+          "Twin Service"
+        ],
+        "summary": "Simulate Twin Scenario",
+        "operationId": "simulate_twin_scenario_v1_twin_simulate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Scenario"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScenarioComparisonResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AuditVerificationResult": {
+        "properties": {
+          "is_valid": {
+            "type": "boolean",
+            "title": "Is Valid"
+          },
+          "total_records": {
+            "type": "integer",
+            "title": "Total Records"
+          },
+          "broken_index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Broken Index"
+          },
+          "latest_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Hash"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "is_valid",
+          "total_records",
+          "message"
+        ],
+        "title": "AuditVerificationResult"
+      },
+      "ColdChainEvent": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "cold_chain_event",
+            "title": "Type",
+            "default": "cold_chain_event"
+          },
+          "origin": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Origin"
+          },
+          "destination": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Destination"
+          },
+          "start_day": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Start Day",
+            "description": "Start day relative to simulation start"
+          },
+          "duration_days": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Duration Days",
+            "description": "Duration of cold-chain event in days"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "start_day",
+          "duration_days"
+        ],
+        "title": "ColdChainEvent"
+      },
+      "DecisionRecord": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Unique decision ID, e.g. DEC-20221020-001"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "restock",
+              "batch_release",
+              "maintenance_pull_forward",
+              "supplier_switch"
+            ],
+            "title": "Type",
+            "description": "Decision action category"
+          },
+          "subject_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Subject Ids",
+            "description": "Subject entities affected (SKU, batch, machine, supplier)"
+          },
+          "recommended_action": {
+            "type": "string",
+            "title": "Recommended Action",
+            "description": "Specific recommended operational action"
+          },
+          "rule_tier": {
+            "type": "string",
+            "enum": [
+              "BLOCK",
+              "REVIEW",
+              "AUTO-ELIGIBLE"
+            ],
+            "title": "Rule Tier",
+            "description": "Deterministic rule tier (BLOCK, REVIEW, AUTO-ELIGIBLE)"
+          },
+          "confidence": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence",
+            "description": "Computed confidence score in [0, 1]"
+          },
+          "rationale": {
+            "type": "string",
+            "title": "Rationale",
+            "description": "Detailed rationale explaining trigger and tier logic"
+          },
+          "inputs_hash": {
+            "type": "string",
+            "title": "Inputs Hash",
+            "description": "SHA-256 hash of canonical decision inputs"
+          },
+          "model_versions": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Model Versions",
+            "description": "Versions of models that contributed"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At",
+            "description": "ISO UTC timestamp"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "proposed",
+              "auto_executed",
+              "pending_review",
+              "approved",
+              "rejected",
+              "expired"
+            ],
+            "title": "Status",
+            "description": "Lifecycle state",
+            "default": "proposed"
+          },
+          "resolver": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolver",
+            "description": "Username of resolver if acted upon"
+          },
+          "resolved_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved At",
+            "description": "ISO UTC timestamp of resolution"
+          },
+          "resolution_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolution Note",
+            "description": "Note provided during resolution"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "type",
+          "subject_ids",
+          "recommended_action",
+          "rule_tier",
+          "confidence",
+          "rationale",
+          "inputs_hash"
+        ],
+        "title": "DecisionRecord"
+      },
+      "DemandShock": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "demand_shock",
+            "title": "Type",
+            "default": "demand_shock"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "product_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Product Id"
+          },
+          "pct_change": {
+            "type": "number",
+            "title": "Pct Change",
+            "description": "Percentage change in demand (e.g. +0.25 for +25%, -0.30 for -30%)"
+          },
+          "start_day": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Start Day",
+            "description": "Start day relative to simulation start"
+          },
+          "duration_days": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Duration Days",
+            "description": "Duration of shock in days"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "pct_change",
+          "start_day",
+          "duration_days"
+        ],
+        "title": "DemandShock"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "MachineOutage": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "machine_outage",
+            "title": "Type",
+            "default": "machine_outage"
+          },
+          "machine_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Machine Id"
+          },
+          "line_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Line Id"
+          },
+          "start_day": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Start Day",
+            "description": "Start day relative to simulation start"
+          },
+          "duration_h": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Duration H",
+            "description": "Duration in hours"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "start_day",
+          "duration_h"
+        ],
+        "title": "MachineOutage"
+      },
+      "MitigationAction": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "action_type": {
+            "type": "string",
+            "enum": [
+              "expedite_raw_material",
+              "inter_warehouse_transfer",
+              "reprioritize_skus",
+              "pull_forward_maintenance"
+            ],
+            "title": "Action Type"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "assumed_cost": {
+            "type": "number",
+            "title": "Assumed Cost"
+          },
+          "expected_profit_saved": {
+            "type": "number",
+            "title": "Expected Profit Saved"
+          },
+          "p_stockout_delta": {
+            "type": "number",
+            "title": "P Stockout Delta"
+          },
+          "target_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "action_type",
+          "name",
+          "description",
+          "assumed_cost",
+          "expected_profit_saved",
+          "p_stockout_delta"
+        ],
+        "title": "MitigationAction"
+      },
+      "QualityShift": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "quality_shift",
+            "title": "Type",
+            "default": "quality_shift"
+          },
+          "product_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Product Id"
+          },
+          "line_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Line Id"
+          },
+          "retest_rate_multiplier": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Retest Rate Multiplier",
+            "description": "Multiplier on retest rate (e.g. 2.0 = double retests)"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "retest_rate_multiplier"
+        ],
+        "title": "QualityShift"
+      },
+      "ResolveDecisionRequest": {
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "approve",
+              "reject"
+            ],
+            "title": "Action",
+            "description": "Resolution action"
+          },
+          "resolution_note": {
+            "type": "string",
+            "title": "Resolution Note",
+            "description": "Mandatory rationale or audit note"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "planner",
+              "qa_reviewer",
+              "admin"
+            ],
+            "title": "Role",
+            "description": "User role executing the resolution"
+          },
+          "username": {
+            "type": "string",
+            "title": "Username",
+            "description": "User ID or username"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "action",
+          "resolution_note",
+          "role",
+          "username"
+        ],
+        "title": "ResolveDecisionRequest"
+      },
+      "Scenario": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "horizon_days": {
+            "type": "integer",
+            "enum": [
+              30,
+              60,
+              90
+            ],
+            "title": "Horizon Days",
+            "default": 30
+          },
+          "n_paths": {
+            "type": "integer",
+            "maximum": 5000.0,
+            "minimum": 10.0,
+            "title": "N Paths",
+            "default": 500
+          },
+          "seed": {
+            "type": "integer",
+            "title": "Seed",
+            "default": 42
+          },
+          "shocks": {
+            "items": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/MachineOutage"
+                },
+                {
+                  "$ref": "#/components/schemas/SupplierDelay"
+                },
+                {
+                  "$ref": "#/components/schemas/DemandShock"
+                },
+                {
+                  "$ref": "#/components/schemas/ColdChainEvent"
+                },
+                {
+                  "$ref": "#/components/schemas/QualityShift"
+                }
+              ],
+              "discriminator": {
+                "propertyName": "type",
+                "mapping": {
+                  "cold_chain_event": "#/components/schemas/ColdChainEvent",
+                  "demand_shock": "#/components/schemas/DemandShock",
+                  "machine_outage": "#/components/schemas/MachineOutage",
+                  "quality_shift": "#/components/schemas/QualityShift",
+                  "supplier_delay": "#/components/schemas/SupplierDelay"
+                }
+              }
+            },
+            "type": "array",
+            "title": "Shocks"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "Scenario"
+      },
+      "ScenarioComparisonResult": {
+        "properties": {
+          "scenario_id": {
+            "type": "string",
+            "title": "Scenario Id"
+          },
+          "scenario_name": {
+            "type": "string",
+            "title": "Scenario Name"
+          },
+          "horizon_days": {
+            "type": "integer",
+            "title": "Horizon Days"
+          },
+          "n_paths": {
+            "type": "integer",
+            "title": "N Paths"
+          },
+          "baseline_metrics": {
+            "$ref": "#/components/schemas/ScenarioMetricSummary"
+          },
+          "shocked_metrics": {
+            "$ref": "#/components/schemas/ScenarioMetricSummary"
+          },
+          "profit_delta": {
+            "type": "number",
+            "title": "Profit Delta"
+          },
+          "profit_at_risk_p5": {
+            "type": "number",
+            "title": "Profit At Risk P5"
+          },
+          "p_stockout_delta": {
+            "type": "number",
+            "title": "P Stockout Delta"
+          },
+          "fill_rate_delta": {
+            "type": "number",
+            "title": "Fill Rate Delta"
+          },
+          "ranked_mitigations": {
+            "items": {
+              "$ref": "#/components/schemas/MitigationAction"
+            },
+            "type": "array",
+            "title": "Ranked Mitigations"
+          }
+        },
+        "type": "object",
+        "required": [
+          "scenario_id",
+          "scenario_name",
+          "horizon_days",
+          "n_paths",
+          "baseline_metrics",
+          "shocked_metrics",
+          "profit_delta",
+          "profit_at_risk_p5",
+          "p_stockout_delta",
+          "fill_rate_delta"
+        ],
+        "title": "ScenarioComparisonResult"
+      },
+      "ScenarioMetricSummary": {
+        "properties": {
+          "p_stockout_mean": {
+            "type": "number",
+            "title": "P Stockout Mean"
+          },
+          "p_stockout_p95": {
+            "type": "number",
+            "title": "P Stockout P95"
+          },
+          "expected_lost_units": {
+            "type": "number",
+            "title": "Expected Lost Units"
+          },
+          "fill_rate_p5": {
+            "type": "number",
+            "title": "Fill Rate P5"
+          },
+          "fill_rate_p50": {
+            "type": "number",
+            "title": "Fill Rate P50"
+          },
+          "fill_rate_p95": {
+            "type": "number",
+            "title": "Fill Rate P95"
+          },
+          "days_of_supply_mean": {
+            "type": "number",
+            "title": "Days Of Supply Mean"
+          },
+          "expected_profit": {
+            "type": "number",
+            "title": "Expected Profit"
+          },
+          "profit_p5": {
+            "type": "number",
+            "title": "Profit P5"
+          },
+          "profit_p95": {
+            "type": "number",
+            "title": "Profit P95"
+          }
+        },
+        "type": "object",
+        "required": [
+          "p_stockout_mean",
+          "p_stockout_p95",
+          "expected_lost_units",
+          "fill_rate_p5",
+          "fill_rate_p50",
+          "fill_rate_p95",
+          "days_of_supply_mean",
+          "expected_profit",
+          "profit_p5",
+          "profit_p95"
+        ],
+        "title": "ScenarioMetricSummary"
+      },
+      "SupplierDelay": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "supplier_delay",
+            "title": "Type",
+            "default": "supplier_delay"
+          },
+          "supplier_id": {
+            "type": "string",
+            "title": "Supplier Id"
+          },
+          "extra_days": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Extra Days",
+            "description": "Extra days of supplier delivery delay"
+          },
+          "start_day": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Start Day",
+            "description": "Start day relative to simulation start"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "supplier_id",
+          "extra_days",
+          "start_day"
+        ],
+        "title": "SupplierDelay"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

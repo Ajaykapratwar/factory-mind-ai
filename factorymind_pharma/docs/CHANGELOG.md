@@ -1,58 +1,57 @@
-# CHANGELOG.md — FactoryMind Pharma Phase 0–1
 
-## Phase 0 — Scaffold & Contracts
 
-### Step 0.1 — Repo Scaffold
-- Created `factorymind_pharma/` directory tree as per spec.
-- Services: `sensing_svc/`, `forecast_svc/` (implemented), `twin_svc/`, `policy_svc/`, `tower_svc/` (stubs).
-- Dashboard: `dashboard/app.py`, `pages/executive.py`, `pages/operational.py`, `components/charts.py`, `assets/tokens.css`, `assets/style.css`.
-- Evaluation: `evaluation/metrics.py`.
-- Tests: `tests/test_metrics.py`.
+## Phase 2 — Intelligence Layer
 
-### Step 0.2 — Config
-- `configs/config.yaml` defines: data paths, train/val/test ratios (0.80/0.10/0.10), seed 42, LightGBM params, feature lists.
+### Step 2A.1 — §1 Residual Diagnostic
+- Analysed residuals vs. predicted value and product_id (grouped).
+- Confirmed which of 4 causes applied (see MODEL_UPGRADE_REPORT.md).
 
-### Step 0.3 — Load & Validate All 15 Source Files
-- Per-file schema dict with expected columns for all 15 files.
-- FK validation: product_id in files 02–06 confirmed subset of product_master.
-- Batch uniqueness validated (no duplicate batch_id for same date+product in production).
-- Row counts printed on load.
-- Files 07–15 (Phase 2+ stubs): schema validated only — no feature engineering applied.
-- **Stub schema surprises:** None. All 9 stub files have well-formed headers matching expected schemas.
+### Step 2A.2 — §2 Model Upgrade
+- Escalation path: expanded features → per-segment → stacked ensemble → residual correction.
+- Gap-closing step documented in MODEL_UPGRADE_REPORT.md.
+- Artifacts: models/lgbm.pkl, models/xgb.pkl, models/catboost.pkl, models/meta_learner.pkl.
+- Output: data/outputs/evaluation_report_phase2.csv (per-SKU full metric suite).
 
-## Phase 1 — Foundation: Data Layer + Core Dashboards
+### Step 2B.1 — §3.1 QC Anomaly Detection
+- Isolation Forest on assay_pct, dissolution_pct, impurity_level.
+- Validated against release_status (PASS/FAIL) — precision/recall/F1 reported.
+- Output: data/outputs/qc_anomaly_scores.parquet.
 
-### Step 1.1 — Master Feature Table
-- Anchor: `sales_demand` (date × product_id × region × channel).
-- Left-join: `demand_factors` on (date, product_id).
-- Left-join: `orders` aggregated (daily ordered_quantity sum, order count) on (date, product_id).
-- Left-join: `inventory` aggregated (sum closing/opening/received stock, max stockout_flag) on (date, product_id).
-- Product dimensions attached from `product_master`.
-- Null imputation: forward-fill per product_id; imputed flags added.
-- Output: `data/processed/master_feature_table.parquet`.
+### Step 2B.2 — §3.2 Predictive Maintenance
+- LightGBM classifier on sensor data + maintenance history.
+- Time-based split (no future leakage). AUC requirement: ≥0.85.
+- Output: data/outputs/maintenance_risk_scores.parquet.
 
-### Step 1.2 — Baseline Forecast
-- Naive seasonal: last-year-same-day-of-week (364-day lag), with 28-day fallback then median.
-- LightGBM: lag-7, lag-28, rolling-mean-7/28 of units_sold + demand factor columns + time features + encoded categoricals.
-- Chronological split (no shuffle): train 80% → val 10% → test 10%.
-- Predictions saved: `data/outputs/test_predictions.parquet`.
+### Step 2B.3 — §3.3 Supplier Risk Scoring
+- Weighted composite: rejection_rate_pct × 0.6 + delivery_unreliability × 0.4.
+- Deterministic rule (not a model) — scores normalised [0–100].
+- Output: data/outputs/supplier_risk_scores.parquet.
 
-### Step 1.3 — Evaluation Metrics Module
-- Full metric suite: MAE, MSE, RMSE, MAPE, SMAPE (new vs reference), WAPE, R², RMSE%, MAE%, Bias%, Rolling bias, Pinball loss stub.
-- Per-SKU report saved: `data/outputs/evaluation_report.csv`.
-- `check_acceptance()` with Phase 1 thresholds.
-- Unit tests: `tests/test_metrics.py`.
+### Step 2B.4 — Dashboards 3, 5, 7
+- Dashboard 3: per-SKU forecast vs actual, confidence bands from ensemble variance.
+- Dashboard 5: machine health risk scores, sensor trend charts.
+- Dashboard 7: supplier risk scores, QC anomaly flags.
+- All dashboards reference dashboard/assets/tokens.css unchanged (same light theme).
 
-### Step 1.4 — Data Access Layer
-- `dashboard/data_loader.py` exposes: `get_kpi_summary()`, `get_demand_vs_actual()`, `get_inventory_status()`, `get_per_sku_mape_table()`.
+## Phase 3 — Optimization & Compliance
 
-### Step 1.5 — Dashboard 1: Executive Summary
-- KPI tiles: revenue, units sold, forecast accuracy (1−WAPE), avg days-of-supply, stockout count.
-- Plan-vs-actual line chart (all SKUs aggregate).
-- Top/bottom 5 SKUs by MAPE table.
-- Custom light palette, DM Serif Display headings, Inter body.
+### Step 3.1 — §4.1 Safety Stock Optimization
+- safety_stock = z × σ_demand × sqrt(lead_time).
+- σ_demand from per-SKU ensemble residual std-dev on validation set.
+- z per criticality tier: critical=2.33, standard=1.65, non-critical=1.28.
+- Warehouse hierarchy: checked in 05_inventory.csv — result documented in ASSUMPTIONS.md.
+- Backtest: simulated stockout reduction vs baseline reorder logic.
+- Output: data/outputs/safety_stock_optimized.parquet.
 
-### Step 1.6 — Dashboard 2: Operational Planning
-- Warehouse inventory table (opening/received/sold/closing/safety/reorder/stockout).
-- Order fulfillment horizontal bar chart by status.
-- Product drill-down: Dropdown → demand history + forecast + inventory trend with safety stock and reorder point overlays.
+### Step 3.2 — §4.2 Compliance Gate
+- Deterministic hard rule: deviation_count > 0 OR audit_status != 'Passed' → blocked.
+- Zero compliance-gated batches in auto-approved output (verified with synthetic test).
+
+### Step 3.3 — §4.3 Cold-Chain Gate
+- Deterministic hard rule: temperature_excursion_flag = 1 → blocked.
+- Zero excursion-flagged shipments in auto-approved output (verified with synthetic test).
+
+### Step 3.4 — Dashboards 4, 8, 9
+- Dashboard 4: new vs old safety stock/reorder point, simulated stockout reduction.
+- Dashboard 8/9: shipment delay trends, cold-chain excursion table by region.
+- Same design tokens as Phase 0–1.

@@ -34,15 +34,15 @@ seed: 42
 
 model:
   lightgbm:
-    n_estimators:    500
-    learning_rate:   0.05
-    num_leaves:      31
+    n_estimators:    1500
+    learning_rate:   0.02
+    num_leaves:      63
     max_depth:       -1
-    min_child_samples: 20
+    min_child_samples: 15
     subsample:       0.8
     colsample_bytree: 0.8
-    reg_alpha:       0.1
-    reg_lambda:      0.1
+    reg_alpha:       0.05
+    reg_lambda:      0.05
     random_state:    42
     n_jobs:          -1
     verbosity:       -1

@@ -1,0 +1,105 @@
+# Digital Twin Configuration (L2)
+# Every parameter carries a `source: assumed | fitted` tag per Spec §4.2
+
+topology:
+  lines:
+    - id: "L01"
+      capacity_units_per_day: 21644.0
+      source: "fitted"
+      machines: ["M001", "M011", "M021", "M031"]
+    - id: "L02"
+      capacity_units_per_day: 21408.0
+      source: "fitted"
+      machines: ["M002", "M012", "M022", "M032"]
+    - id: "L03"
+      capacity_units_per_day: 20746.0
+      source: "fitted"
+      machines: ["M003", "M013", "M023", "M033"]
+    - id: "L04"
+      capacity_units_per_day: 20793.0
+      source: "fitted"
+      machines: ["M004", "M014", "M024", "M034"]
+    - id: "L05"
+      capacity_units_per_day: 20837.0
+      source: "fitted"
+      machines: ["M005", "M015", "M025", "M035"]
+    - id: "L06"
+      capacity_units_per_day: 21054.0
+      source: "fitted"
+      machines: ["M006", "M016", "M026", "M036"]
+    - id: "L07"
+      capacity_units_per_day: 21406.0
+      source: "fitted"
+      machines: ["M007", "M017", "M027", "M037"]
+    - id: "L08"
+      capacity_units_per_day: 22149.0
+      source: "fitted"
+      machines: ["M008", "M018", "M028", "M038"]
+    - id: "L09"
+      capacity_units_per_day: 20594.0
+      source: "fitted"
+      machines: ["M009", "M019", "M029", "M039"]
+    - id: "L10"
+      capacity_units_per_day: 21134.0
+      source: "fitted"
+      machines: ["M010", "M020", "M030", "M040"]
+
+  machine_line_mapping_rule: "round-robin M001-M040 across L01-L10 (4 machines per line)"
+  machine_line_mapping_source: "assumed"
+
+  warehouses:
+    ids: ["W001", "W002", "W003", "W004", "W005", "W006", "W007", "W008", "W009", "W010"]
+    source: "fitted"
+    network_structure: "flat network; inter-warehouse transfers require explicit action"
+    network_source: "assumed"
+
+parameters:
+  retest_delay_days:
+    value: 3
+    source: "assumed"
+    description: "Delay in days for batches undergoing QC RETEST"
+
+  holding_cost_per_unit_day:
+    value: 0.05
+    source: "assumed"
+    description: "Daily holding cost proxy per unit"
+
+  transfer_lead_time_days:
+    value: 2
+    source: "assumed"
+    description: "Lead time for inter-warehouse stock transfer"
+
+  transfer_cost_per_unit:
+    value: 0.15
+    source: "assumed"
+    description: "Shipping/handling cost per transferred unit between warehouses"
+
+  raw_material_expedite_cost:
+    value: 500.0
+    source: "assumed"
+    description: "Cost to expedite raw material shipment to remove delivery delay"
+
+  maintenance_pull_forward_cost:
+    value: 1000.0
+    source: "assumed"
+    description: "Cost to pull forward preventive maintenance window"
+
+  cold_chain_excursion_rate:
+    value: 0.0399
+    source: "fitted"
+    description: "Empirical base rate of cold-chain temperature excursion"
+
+  qc_release_rates:
+    pass_rate: 0.8144
+    retest_rate: 0.1806
+    fail_rate: 0.0050
+    source: "fitted"
+    description: "Empirical QC release status probabilities from historical data"
+
+  default_paths:
+    value: 500
+    source: "assumed"
+
+  default_horizon_days:
+    value: 30
+    source: "assumed"

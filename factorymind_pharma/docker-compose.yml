@@ -1,0 +1,63 @@
+version: "3.9"
+
+services:
+  # ─────────────────────────────────────────────────────────────
+  # Tower Service  (FastAPI — all /v1 endpoints + health probes)
+  # ─────────────────────────────────────────────────────────────
+  tower_svc:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: >
+      uvicorn factorymind_pharma.services.tower_svc.api:app
+      --host 0.0.0.0 --port 8000 --workers 1
+    ports:
+      - "8000:8000"
+    environment:
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+      - DATA_DIR=/app/data
+      - MODEL_DIR=/app/factorymind_pharma/models
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./data:/app/data:ro
+      - ./factorymind_pharma/models:/app/factorymind_pharma/models:ro
+      - sqlite_data:/app/sqlite
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+
+  # ─────────────────────────────────────────────────────────────
+  # Dashboard  (Dash/Plotly — multi-page, port 8501)
+  # ─────────────────────────────────────────────────────────────
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: >
+      python -m factorymind_pharma.dashboard.app
+    ports:
+      - "8501:8501"
+    environment:
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+      - DATA_DIR=/app/data
+      - MODEL_DIR=/app/factorymind_pharma/models
+      - TOWER_API_URL=http://tower_svc:8000
+    volumes:
+      - ./data:/app/data:ro
+      - ./factorymind_pharma/models:/app/factorymind_pharma/models:ro
+    depends_on:
+      tower_svc:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 45s
+
+volumes:
+  sqlite_data:
+    driver: local

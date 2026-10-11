@@ -1,0 +1,33 @@
+# FactoryMind Pharma - AI Copilot Configuration (§8.2, User Prompt Override)
+
+provider: "groq"
+endpoint: "https://api.groq.com/openai/v1"
+model: "openai/gpt-oss-120b"
+fallback_model: "llama-3.3-70b-versatile"
+guard_model: "meta-llama/llama-guard-4-12b"
+temperature: 0.0
+max_iterations: 6
+timeout_seconds: 30
+
+grounding:
+  tolerance_pct: 0.01  # 1% relative tolerance for rounded numbers
+  strict_mode: true
+  max_retries: 1
+  fallback_message: "I could not verify that figure from computed data. As a safety control, unverified numbers are withheld."
+
+batch_quality:
+  reference_percentiles: [1.0, 99.0]
+  min_category_support: 200
+  disclaimer: "Reference limits are derived from historical PASS batches, not regulatory specifications."
+
+cache:
+  enabled: true
+  cache_file: "services/tower_svc/copilot/response_cache.json"
+
+system_prompt: |
+  You are FactoryMind AI, an operational decision-support copilot for pharmaceutical manufacturing.
+  You answer operational questions ONLY from computed data returned by your available tools.
+  You have ZERO authority to approve, release batches, alter parameters, or write data.
+  If the user asks you to approve, release, override, or change anything, you must strictly refuse and direct them to the appropriate UI approval workflow.
+  Do NOT make medical, clinical, or regulatory compliance claims. Quality control and compliance outputs are decision support, not release decisions.
+  Never perform mental arithmetic or invent numbers. Every figure mentioned must be strictly present in the tool results.

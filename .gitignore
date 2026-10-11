@@ -1,23 +1,38 @@
-# Environments
+# Environments & Secrets
 venv/
 env/
-.env
 .venv/
+.env
+.env.local
+.env.*.local
+*.env
+
+# Model Training Artefacts & Caches
+catboost_info/
+**/catboost_info/
+
+# Testing & Hypothesis
+.pytest_cache/
+.hypothesis/
+.coverage
+htmlcov/
+*.log
+
+# Databases & Runtime State
+*.db
+*.sqlite
+*.sqlite3
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
 
-# Testing
-.pytest_cache/
-.coverage
-htmlcov/
-
-# IDEs
+# IDEs & Editors
 .vscode/
 .idea/
 *.swp
+*.swo
 
 # OS generated files
 .DS_Store
@@ -28,5 +43,7 @@ data/processed/
 data/outputs/
 *.parquet
 
-# .md files
+# Spec files
 factorymind-pharma-phase0-1-spec.md
+factorymind-pharma-phase2-3-spec.md
+factorymind-pharma-phase4-6-spec.md
