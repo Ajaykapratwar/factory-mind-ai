@@ -1,0 +1,4 @@
+grain,wape_pct,rmse,bias_pct,r2
+row (product-day),19.78,78.73,0.42,0.605
+product-day,15.7,146.73,0.42,0.95
+product-week,10.57,249.62,0.42,0.966

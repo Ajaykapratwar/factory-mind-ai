@@ -79,7 +79,8 @@ def make_chart_layout(
 
 def demand_vs_actual_chart(df: pd.DataFrame, height: int = 320) -> go.Figure:
     """
-    Line chart: actual units_sold vs naive_pred vs lgb_pred over time.
+    Line chart: actual units_sold vs naive_pred vs hurdle/lgb point forecast over time.
+    If pred_q10 / pred_q90 columns are present, draw a shaded uncertainty band.
     Aggregated or per-SKU.
     """
     fig = go.Figure()
@@ -90,18 +91,37 @@ def demand_vs_actual_chart(df: pd.DataFrame, height: int = 320) -> go.Figure:
             name="Actual", mode="lines",
             line=dict(color=CHART_COLORS["chart_1"], width=2),
         ))
+
+    # P10–P90 uncertainty band
+    if "pred_q90" in df.columns and "pred_q10" in df.columns:
+        fig.add_trace(go.Scatter(
+            x=pd.concat([df["date"], df["date"].iloc[::-1]]),
+            y=pd.concat([df["pred_q90"], df["pred_q10"].iloc[::-1]]),
+            fill="toself",
+            fillcolor="rgba(99, 110, 250, 0.12)",
+            line=dict(color="rgba(255,255,255,0)"),
+            hoverinfo="skip",
+            showlegend=True,
+            name="P10–P90 band",
+        ))
+
     if "naive_pred" in df.columns and df["naive_pred"].notna().any():
         fig.add_trace(go.Scatter(
             x=df["date"], y=df["naive_pred"],
             name="Naive Seasonal", mode="lines",
             line=dict(color=CHART_COLORS["chart_3"], width=1.5, dash="dot"),
         ))
-    if "lgb_pred" in df.columns and df["lgb_pred"].notna().any():
-        fig.add_trace(go.Scatter(
-            x=df["date"], y=df["lgb_pred"],
-            name="LightGBM", mode="lines",
-            line=dict(color=CHART_COLORS["chart_4"], width=1.5, dash="dash"),
-        ))
+
+    # Prefer hurdle / full-grid column; fall back to legacy lgb_pred
+    for col, label in [("pred_hurdle", "Hurdle Model"), ("pred_lgb", "LightGBM"),
+                       ("lgb_pred", "LightGBM (legacy)")]:
+        if col in df.columns and df[col].notna().any():
+            fig.add_trace(go.Scatter(
+                x=df["date"], y=df[col],
+                name=label, mode="lines",
+                line=dict(color=CHART_COLORS["chart_4"], width=1.5, dash="dash"),
+            ))
+            break
 
     layout = make_chart_layout(
         title="Demand — Actual vs Forecast",
@@ -111,6 +131,7 @@ def demand_vs_actual_chart(df: pd.DataFrame, height: int = 320) -> go.Figure:
     )
     fig.update_layout(**layout)
     return fig
+
 
 
 def inventory_trend_chart(df: pd.DataFrame, product_id: str, height: int = 280) -> go.Figure:

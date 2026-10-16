@@ -62,9 +62,12 @@ def _load_mft() -> pd.DataFrame:
 
 
 def _load_predictions() -> Optional[pd.DataFrame]:
+    """Prefer full-grid predictions (zero-leakage, calendar grid) over the old sales-rows-only file."""
     global _PRED_CACHE
     if _PRED_CACHE is None:
-        path = _get_outputs_dir() / "test_predictions.parquet"
+        full_grid_path = _get_outputs_dir() / "test_predictions_full_grid.parquet"
+        legacy_path    = _get_outputs_dir() / "test_predictions.parquet"
+        path = full_grid_path if full_grid_path.exists() else legacy_path
         if not path.exists():
             return None
         _PRED_CACHE = pd.read_parquet(path, engine="pyarrow")
@@ -98,15 +101,42 @@ def get_kpi_summary() -> dict:
     total_revenue = float(mft["revenue"].sum())
     total_units   = float(mft["units_sold"].sum())
 
-    # Forecast accuracy (WAPE on test set if predictions available)
-    forecast_accuracy = None
-    if preds is not None and "lgb_pred" in preds.columns:
-        y_true = preds["units_sold"].values
-        y_pred = preds["lgb_pred"].fillna(0).values
-        total_actual = np.sum(np.abs(y_true))
-        if total_actual > 0:
-            wape = np.sum(np.abs(y_true - y_pred)) / total_actual * 100
-            forecast_accuracy = round(100.0 - wape, 2)  # accuracy = 1 - WAPE
+    # Product-week WAPE from full-grid evaluation (the correct reporting grain).
+    # NOTE: "1 − WAPE" at product-day on the full calendar grid is NOT a meaningful accuracy
+    # metric and must NOT be shown on dashboards. Use product-week WAPE instead.
+    forecast_wape_pct   = None   # product-week WAPE (hurdle model, full grid)
+    forecast_wape_grain = None   # grain label for display
+    p90_coverage_pct    = None   # empirical P90 quantile coverage
+    pred_col = None
+    if preds is not None:
+        if "pred_hurdle" in preds.columns:
+            pred_col = "pred_hurdle"
+        elif "pred_lgb" in preds.columns:
+            pred_col = "pred_lgb"
+        elif "lgb_pred" in preds.columns:
+            pred_col = "lgb_pred"
+    if preds is not None and pred_col is not None:
+        # Compute weekly WAPE by aggregating to product-week blocks
+        _p = preds.copy()
+        _p["date"] = pd.to_datetime(_p["date"])
+        test_start = pd.Timestamp("2022-10-20")
+        _p = _p[_p["date"] >= test_start].copy()
+        if len(_p) > 0:
+            _p["block_7d"] = (_p["date"] - test_start).dt.days // 7
+            max_block = (73 // 7) - 1  # 10 complete 7-day blocks
+            _p = _p[_p["block_7d"] <= max_block]
+            pw = _p.groupby(["product_id", "block_7d"]).agg(
+                units_sold=("units_sold", "sum"), pred=(pred_col, "sum")
+            ).reset_index()
+            wape_num = np.sum(np.abs(pw["units_sold"].values - pw["pred"].values))
+            wape_den = np.sum(np.abs(pw["units_sold"].values))
+            if wape_den > 0:
+                forecast_wape_pct   = round(wape_num / wape_den * 100, 1)
+                forecast_wape_grain = "product-week (10 complete 7-day blocks)"
+        # P90 coverage
+        if "pred_q90" in preds.columns:
+            _q = preds[preds["date"] >= test_start] if "date" in preds.columns else preds
+            p90_coverage_pct = round(float(np.mean(_q["units_sold"].values <= _q["pred_q90"].values)) * 100, 1)
 
     # Days of supply = closing_stock / avg_daily_units_sold
     if "total_closing_stock" in mft.columns:
@@ -124,7 +154,9 @@ def get_kpi_summary() -> dict:
     return {
         "total_revenue":         round(total_revenue, 2),
         "total_units_sold":      int(total_units),
-        "forecast_accuracy_pct": forecast_accuracy,
+        "forecast_wape_pct":     forecast_wape_pct,
+        "forecast_wape_grain":   forecast_wape_grain,
+        "p90_coverage_pct":      p90_coverage_pct,
         "avg_days_of_supply":    avg_dos,
         "stockout_count":        stockout_count,
     }
@@ -132,8 +164,9 @@ def get_kpi_summary() -> dict:
 
 def get_demand_vs_actual(product_id: Optional[str] = None) -> pd.DataFrame:
     """
-    Returns a DataFrame of actual + naive + lgb forecasts for charting.
+    Returns a DataFrame of actual + naive + hurdle/lgb forecasts (+ quantile bands) for charting.
     If product_id is None → aggregate across all SKUs by date.
+    Prefers full-grid predictions when available.
     """
     mft  = _load_mft()
     pred = _load_predictions()
@@ -150,17 +183,27 @@ def get_demand_vs_actual(product_id: Optional[str] = None) -> pd.DataFrame:
     )
 
     if pred is not None:
-        pred_agg = (
-            pred.groupby("date", as_index=False)
-            .agg(naive_pred=("naive_pred", "sum"), lgb_pred=("lgb_pred", "sum"))
-        )
+        agg_cols = {}
+        if "naive_pred" in pred.columns:
+            agg_cols["naive_pred"] = ("naive_pred", "sum")
+        # Prefer hurdle → lgb → legacy
+        for col in ["pred_hurdle", "pred_lgb", "lgb_pred"]:
+            if col in pred.columns:
+                agg_cols[col] = (col, "sum")
+                break
+        for qcol in ["pred_q10", "pred_q90"]:
+            if qcol in pred.columns:
+                agg_cols[qcol] = (qcol, "sum")
+        if agg_cols:
+            pred_agg = pred.groupby("date", as_index=False).agg(**agg_cols)
+        else:
+            pred_agg = pred[["date"]].drop_duplicates()
         result = actual_agg.merge(pred_agg, on="date", how="left")
     else:
         result = actual_agg
-        result["naive_pred"] = None
-        result["lgb_pred"]   = None
 
     return result.sort_values("date").reset_index(drop=True)
+
 
 
 def get_inventory_status(warehouse_id: Optional[str] = None) -> pd.DataFrame:

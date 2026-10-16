@@ -27,8 +27,15 @@ def run_twin_validation() -> Dict:
     3. Simulated downtime hours within +/- 20% of actual (4,534.36 h).
     """
     # 1. Demand Interval Calibration
-    tp = pd.read_parquet(DATA_DIR / "outputs" / "test_predictions.parquet")
-    tp["residual"] = tp["units_sold"].values - tp["lgb_pred"].values
+    full_grid_path = DATA_DIR / "outputs" / "test_predictions_full_grid.parquet"
+    pred_path = DATA_DIR / "outputs" / "test_predictions.parquet"
+    if full_grid_path.exists():
+        tp = pd.read_parquet(full_grid_path)
+        pred_col = "pred_hurdle" if "pred_hurdle" in tp.columns else ("pred_lgb" if "pred_lgb" in tp.columns else "units_sold")
+    else:
+        tp = pd.read_parquet(pred_path)
+        pred_col = "lgb_pred" if "lgb_pred" in tp.columns else "units_sold"
+    tp["residual"] = tp["units_sold"].values - tp[pred_col].values
 
     np.random.seed(42)
     covered = 0
@@ -37,7 +44,7 @@ def run_twin_validation() -> Dict:
     for sku, grp in tp.groupby("product_id"):
         grp = grp.sort_values("date")
         actual = grp["units_sold"].values
-        pred = grp["lgb_pred"].values
+        pred = grp[pred_col].values
         res = grp["residual"].values
         n = len(actual)
         if n < 7:

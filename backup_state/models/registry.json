@@ -1,0 +1,40 @@
+{
+  "active_champion": "ensemble-challenger-v2",
+  "models": {
+    "ensemble-champion-v1": {
+      "version": "1.0.0",
+      "model_type": "StackedEnsemble (LGBM+XGB+CatBoost+MetaLearner)",
+      "training_window": "2021-01-01 to 2022-10-19",
+      "metrics": {
+        "wape": 0.202,
+        "rmse": 35.8,
+        "bias_pct": -0.85,
+        "r2": 0.65
+      },
+      "status": "retired_champion",
+      "promoted_at": "2022-10-20T00:00:00"
+    },
+    "ensemble-challenger-v2": {
+      "version": "2.0.0-rc1",
+      "model_type": "RetrainedEnsemble (Enhanced Lag & Disease Index)",
+      "training_window": "2021-01-01 to 2022-11-15",
+      "metrics": {
+        "wape": 0.178,
+        "rmse": 31.2,
+        "bias_pct": -0.4,
+        "r2": 0.72
+      },
+      "status": "champion",
+      "promoted_at": "2026-10-11T13:53:53.597080"
+    }
+  },
+  "audit_history": [
+    {
+      "action": "model_promotion",
+      "previous_champion": "ensemble-champion-v1",
+      "new_champion": "ensemble-challenger-v2",
+      "wape_gain_pct": 2.4,
+      "promoted_at": "2026-10-11T13:53:53.597080"
+    }
+  ]
+}

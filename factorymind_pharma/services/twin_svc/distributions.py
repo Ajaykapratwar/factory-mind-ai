@@ -26,10 +26,24 @@ class DemandResidualModel:
         self._fit()
 
     def _fit(self):
+        full_grid_path = self.data_dir / "outputs" / "test_predictions_full_grid.parquet"
         pred_path = self.data_dir / "outputs" / "test_predictions.parquet"
-        if pred_path.exists():
+        if full_grid_path.exists():
+            tp = pd.read_parquet(full_grid_path)
+            # Use hurdle or lgb pred
+            pred_col = "pred_hurdle" if "pred_hurdle" in tp.columns else ("pred_lgb" if "pred_lgb" in tp.columns else "units_sold")
+            tp["residual"] = tp["units_sold"].values - tp[pred_col].values
+            self.global_residuals = tp["residual"].values
+            for sku, grp in tp.groupby("product_id"):
+                res = grp.sort_values("date")["residual"].values
+                self.residuals_by_sku[sku] = res
+                if len(res) >= self.block_len:
+                    blocks = [res[i:i + self.block_len] for i in range(len(res) - self.block_len + 1)]
+                    self.blocks_by_sku[sku] = blocks
+        elif pred_path.exists():
             tp = pd.read_parquet(pred_path)
-            tp["residual"] = tp["units_sold"].values - tp["lgb_pred"].values
+            pred_col = "lgb_pred" if "lgb_pred" in tp.columns else "units_sold"
+            tp["residual"] = tp["units_sold"].values - tp[pred_col].values
             self.global_residuals = tp["residual"].values
             for sku, grp in tp.groupby("product_id"):
                 res = grp.sort_values("date")["residual"].values

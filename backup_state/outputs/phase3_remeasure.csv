@@ -1,0 +1,11 @@
+metric,value,source,label
+simulated_stockout_event_rate_baseline,0.12,assumed,simulated
+simulated_stockout_event_rate_policy,0.098,twin_fallback,simulated
+stockout_event_reduction_pct,18.33,derived,simulated
+gate_stockout_reduction_target_pct,15.0,spec §4.8,threshold
+gate_stockout_reduction_pass,1.0,derived,gate
+simulated_fill_rate_p50_baseline,0.92,assumed,simulated
+simulated_fill_rate_p50_policy,0.968,twin_fallback,simulated
+gate_fill_rate_target,0.96,spec §4.8,threshold
+gate_fill_rate_pass,1.0,derived,gate
+gate_zero_auto_approved_violations,1.0,test_phase6_orchestration.py,gate

@@ -1,6 +1,6 @@
 # FactoryMind AI (Pharma) — Acceptance Report
 
-> Generated: 2026-10-11T13:39:55Z  
+> Generated: 2026-10-13T05:05:02Z  
 > §13.1 — One automated check per exit criterion from Phases 4–6.
 > Failures are stated plainly; thresholds have not been adjusted to match results.
 
@@ -14,7 +14,9 @@
 | Twin component files present | all 4 files | missing=[] | ✅ |
 | docs/TWIN_VALIDATION.md present | file exists | True | ✅ |
 | Scenario runtime ≤ 20 s | ≤ 20 s | 1.7s | ✅ |
-| Paired common random numbers | baseline ≠ shocked (same seed) | baseline_profit=513194016, shocked_profit=513194016 | ✅ |
+| Paired common random numbers | baseline ≠ shocked (same seed) | baseline_profit=493337120, shocked_profit=493337120 | ❌ |
+| Paired common random numbers | no exception | ACCEPTANCE FAIL [Phase 4] Paired common random numbers: target=baseline ≠ shocked (same seed), measured=baseline_profit=493337120, shocked_profit=493337120
+assert False | ❌ |
 | fact_financial C6 identity + no clipping | max_err < 1 AND loss_share > 30% | max_err=0.0000, loss_share=48.0% | ✅ |
 
 ## Phase 5
@@ -42,4 +44,4 @@
 
 ---
 
-## Summary: 19 / 19 criteria passed ✅
+## Summary: 18 / 20 criteria passed — **2 FAILING ❌**

@@ -63,47 +63,82 @@ def _build_expanded_features(df: pd.DataFrame) -> pd.DataFrame:
     df["week_of_year"]  = df["date"].dt.isocalendar().week.astype(int)
     df["is_month_start"] = df["date"].dt.is_month_start.astype(int)
     df["is_month_end"]   = df["date"].dt.is_month_end.astype(int)
+    df["is_weekend"]     = (df["day_of_week"] >= 5).astype(int)
 
-    # Simple holiday proxy: weekend (pharma ordering still happens Mon-Fri mostly)
-    df["is_weekend"] = (df["day_of_week"] >= 5).astype(int)
+    # ── Calendar-day product-level grid ────────────────────────────────────
+    min_date = df["date"].min()
+    max_date = df["date"].max()
+    all_dates = pd.date_range(min_date, max_date, freq="D")
+    all_products = df["product_id"].unique()
 
-    # ── Extended lag features ──────────────────────────────────────────────
+    # Aggregate daily demand per product across all regions/channels
+    daily_prod = (
+        df.groupby(["product_id", "date"])["units_sold"]
+        .sum()
+        .reset_index()
+    )
+
+    grid_idx = pd.MultiIndex.from_product([all_products, all_dates], names=["product_id", "date"])
+    grid = pd.DataFrame(index=grid_idx).reset_index()
+    grid = grid.merge(daily_prod, on=["product_id", "date"], how="left")
+    grid["units_sold"] = grid["units_sold"].fillna(0.0)
+    grid = grid.sort_values(["product_id", "date"]).reset_index(drop=True)
+
+    # ── Extended lag features on calendar grid ─────────────────────────────
     for lag in [1, 2, 3, 7, 14, 28, 60, 90]:
-        col = f"lag_{lag}"
-        df[col] = df.groupby("product_id")["units_sold"].shift(lag)
+        grid[f"lag_{lag}"] = grid.groupby("product_id")["units_sold"].shift(lag)
 
-    # ── Extended rolling statistics ────────────────────────────────────────
+    # ── Extended rolling statistics on calendar grid ───────────────────────
     for w in [7, 28]:
-        df[f"rolling_mean_{w}"] = (
-            df.groupby("product_id")["units_sold"]
+        grid[f"rolling_mean_{w}"] = (
+            grid.groupby("product_id")["units_sold"]
             .transform(lambda x: x.shift(1).rolling(w, min_periods=1).mean())
         )
-        df[f"rolling_std_{w}"] = (
-            df.groupby("product_id")["units_sold"]
+        grid[f"rolling_std_{w}"] = (
+            grid.groupby("product_id")["units_sold"]
             .transform(lambda x: x.shift(1).rolling(w, min_periods=2).std())
         )
 
-    df["rolling_min_28"] = (
-        df.groupby("product_id")["units_sold"]
+    grid["rolling_min_28"] = (
+        grid.groupby("product_id")["units_sold"]
         .transform(lambda x: x.shift(1).rolling(28, min_periods=1).min())
     )
-    df["rolling_max_28"] = (
-        df.groupby("product_id")["units_sold"]
+    grid["rolling_max_28"] = (
+        grid.groupby("product_id")["units_sold"]
         .transform(lambda x: x.shift(1).rolling(28, min_periods=1).max())
     )
 
-    # ── Cross-product category-level demand ────────────────────────────────
-    # Sum of units_sold across all products in same category on same date
-    if "category" in df.columns:
-        cat_agg = (
-            df.groupby(["date", "category"])["units_sold"]
-            .transform("sum")
+    # ── EWM features on calendar grid ──────────────────────────────────────
+    for span in [7, 14, 28]:
+        grid[f"ewm_{span}"] = (
+            grid.groupby("product_id")["units_sold"]
+            .transform(lambda x: x.shift(1).ewm(span=span, adjust=False).mean())
         )
-        df["category_demand"] = cat_agg
+
+    # ── Lag-ratios ─────────────────────────────────────────────────────────
+    grid["lag1_vs_mean7"] = grid["lag_1"] / (grid["rolling_mean_7"] + 1e-3)
+    grid["lag7_vs_mean28"] = grid["lag_7"] / (grid["rolling_mean_28"] + 1e-3)
+
+    # ── Expanding mean per SKU ─────────────────────────────────────────────
+    grid["expanding_mean"] = (
+        grid.groupby("product_id")["units_sold"]
+        .transform(lambda x: x.shift(1).expanding(min_periods=7).mean())
+    )
+
+    grid_cols = [c for c in grid.columns if c not in ["product_id", "date", "units_sold"]]
+    df = df.merge(grid[["product_id", "date"] + grid_cols], on=["product_id", "date"], how="left")
+
+    # ── Cross-product category-level demand on calendar grid (LAG-1) ────────
+    if "category" in df.columns:
+        prod_cat = df[["product_id", "category"]].drop_duplicates()
+        cat_grid = grid[["product_id", "date", "units_sold"]].merge(prod_cat, on="product_id", how="left")
+        cat_daily = cat_grid.groupby(["category", "date"])["units_sold"].sum().reset_index()
+        cat_daily = cat_daily.sort_values(["category", "date"]).reset_index(drop=True)
+        cat_daily["category_demand"] = cat_daily.groupby("category")["units_sold"].shift(1)
+        df = df.merge(cat_daily[["category", "date", "category_demand"]], on=["category", "date"], how="left")
 
     # ── Interaction terms ──────────────────────────────────────────────────
     if "disease_season_index" in df.columns and "criticality" in df.columns:
-        # Encode criticality numerically for interaction
         crit_map = {}
         for c in df["criticality"].dropna().unique():
             crit_map[c] = len(crit_map)
@@ -117,27 +152,18 @@ def _build_expanded_features(df: pd.DataFrame) -> pd.DataFrame:
         df["category_enc_interact"] = df["category"].map(cat_map).fillna(0)
         df["promo_x_category"] = df["promotion_flag"] * df["category_enc_interact"]
 
-    # ── EWM features (capture recent trend without look-ahead) ───────────────
-    for span in [7, 14, 28]:
-        df[f"ewm_{span}"] = (
-            df.groupby("product_id")["units_sold"]
-            .transform(lambda x: x.shift(1).ewm(span=span, adjust=False).mean())
-        )
-
-    # ── Lag-ratio: how much has demand changed relative to baseline ──────────
-    df["lag1_vs_mean7"] = df["lag_1"] / (df["rolling_mean_7"] + 1e-3)
-    df["lag7_vs_mean28"] = df["lag_7"] / (df["rolling_mean_28"] + 1e-3)
-
-    # ── Expanding mean per SKU (long-term level) ─────────────────────────────
-    df["expanding_mean"] = (
-        df.groupby("product_id")["units_sold"]
-        .transform(lambda x: x.shift(1).expanding(min_periods=7).mean())
-    )
-
-    # ── Lagged inventory signals (lag 1 to avoid leakage) ────────────────
-    for col in ["stockout_flag", "total_closing_stock", "total_ordered_quantity", "num_orders"]:
-        if col in df.columns:
-            df[f"{col}_lag1"] = df.groupby("product_id")[col].shift(1)
+    # ── Lagged inventory signals on daily grid (lag 1 to avoid leakage) ────
+    inv_cols = ["stockout_flag", "total_closing_stock",
+                "total_ordered_quantity", "num_orders", "total_received_quantity"]
+    avail_inv = [c for c in inv_cols if c in df.columns]
+    if avail_inv:
+        daily_inv = df.groupby(["product_id", "date"])[avail_inv].first().reset_index()
+        inv_grid = pd.DataFrame(index=grid_idx).reset_index().merge(daily_inv, on=["product_id", "date"], how="left")
+        inv_grid = inv_grid.sort_values(["product_id", "date"]).reset_index(drop=True)
+        for col in avail_inv:
+            inv_grid[f"{col}_lag1"] = inv_grid.groupby("product_id")[col].shift(1)
+        inv_lag_cols = [f"{col}_lag1" for col in avail_inv]
+        df = df.merge(inv_grid[["product_id", "date"] + inv_lag_cols], on=["product_id", "date"], how="left")
 
     return df
 
@@ -196,14 +222,21 @@ EXPANDED_FEATURE_COLS = [
     "unit_price", "strength_mg", "pack_size",
     "production_cost", "shelf_life_days",
     # Lagged inventory signals (lag-1 to avoid leakage)
+    # NOTE: total_ordered_quantity, num_orders, total_received_quantity are BANNED as raw same-day
+    # features — only their lag-1 versions are permitted (1-day-ahead forecast contract).
     "stockout_flag_lag1", "total_closing_stock_lag1",
     "total_ordered_quantity_lag1", "num_orders_lag1",
-    # Same-day demand signals (causal: orders placed drive units shipped; != units_sold at 0.36%)
-    "total_ordered_quantity", "num_orders",
-    "total_received_quantity",
+    "total_received_quantity_lag1",
 ]
 
 CAT_COLS = ["product_id", "season", "region", "channel", "category", "dosage_form", "criticality"]
+
+# Raw same-day columns that are BANNED from training features (1-day-ahead contract).
+# Their lag-1 counterparts are the only permitted substitutes.
+BANNED_SAME_DAY = {"total_ordered_quantity", "num_orders", "total_received_quantity"}
+# For export / verification: lag-1 variants that must appear in EXPANDED_FEATURE_COLS
+BANNED_COLS_VERIFY = {f"{c}_lag1" for c in BANNED_SAME_DAY}
+
 
 
 def _get_feature_cols(df: pd.DataFrame) -> List[str]:

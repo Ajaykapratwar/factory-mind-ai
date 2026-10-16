@@ -2,10 +2,10 @@
 dashboard/pages/executive.py — Step 1.5
 Executive Summary Dashboard.
 
-KPI tiles: total revenue, total units sold, forecast accuracy (1−WAPE),
-           avg days-of-supply, stockout count.
-Plan-vs-actual line chart (naive vs LightGBM vs actual, aggregate all SKUs).
-Top/bottom 5 SKUs by MAPE table.
+KPI tiles: total revenue, total units sold, product-week WAPE (correct grain),
+           P90 quantile coverage, avg days-of-supply, stockout count.
+NOTE: "1 − WAPE" at the product-day grain is NOT reported; it conflates
+      zero-demand days and gives a misleadingly high number. Use product-week WAPE.
 """
 
 import sys, os
@@ -79,10 +79,14 @@ def layout():
     mape_df = get_per_sku_mape_table()
     demand_df = get_demand_vs_actual()   # aggregate
 
-    rev_str = _fmt_num(kpis["total_revenue"], prefix="$")
-    units_str = _fmt_num(kpis["total_units_sold"], prefix="")
-    acc_str = f"{kpis['forecast_accuracy_pct']:.1f}%" if kpis["forecast_accuracy_pct"] else "—"
-    dos_str = f"{kpis['avg_days_of_supply']:.0f} days" if kpis["avg_days_of_supply"] else "—"
+    rev_str     = _fmt_num(kpis["total_revenue"], prefix="$")
+    units_str   = _fmt_num(kpis["total_units_sold"], prefix="")
+    wape_val    = kpis.get("forecast_wape_pct")
+    wape_str    = f"{wape_val:.1f}%" if wape_val is not None else "—"
+    wape_grain  = kpis.get("forecast_wape_grain") or "product-week"
+    p90_val     = kpis.get("p90_coverage_pct")
+    p90_str     = f"{p90_val:.1f}%" if p90_val is not None else "—"
+    dos_str     = f"{kpis['avg_days_of_supply']:.0f} days" if kpis["avg_days_of_supply"] else "—"
     stockout_str = f"{kpis['stockout_count']:,}"
 
     fig_demand = demand_vs_actual_chart(demand_df, height=340)
@@ -100,7 +104,10 @@ def layout():
                 _kpi_card("Total Revenue", rev_str,
                           subtext="All products · 2021–2022", primary=True),
                 _kpi_card("Units Sold", units_str, "across 100 SKUs"),
-                _kpi_card("Forecast Accuracy", acc_str, "1 − WAPE (LightGBM)"),
+                _kpi_card("WAPE (Product-Week)", wape_str,
+                          f"Grain: {wape_grain} | SKU-level demand is highly intermittent (62% zero days)"),
+                _kpi_card("P90 Coverage", p90_str,
+                          "Empirical quantile coverage on full calendar grid (nominal 90%)"),
                 _kpi_card("Avg Days of Supply", dos_str, "closing stock / avg daily sales"),
                 _kpi_card("Stockout Events", stockout_str, "historical flag count"),
             ], className="kpi-grid"),

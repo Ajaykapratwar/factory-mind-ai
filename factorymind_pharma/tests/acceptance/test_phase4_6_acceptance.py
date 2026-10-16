@@ -112,9 +112,9 @@ class TestPhase4:
             # Profit delta should be non-zero when there's a shock
             b_profit = res_base.baseline_summary.get("expected_profit", 0)
             s_profit = res_shock.shocked_summary.get("expected_profit", 0) if res_shock.shocked_summary else b_profit
-            paired = (b_profit != s_profit) or True   # common-random-numbers: different outcomes, same seed structure
+            paired = (b_profit != s_profit)  # must actually differ under a shock
             record("Phase 4", "Paired common random numbers", "baseline ≠ shocked (same seed)",
-                   f"baseline_profit={b_profit:.0f}, shocked_profit={s_profit:.0f}", True)
+                   f"baseline_profit={b_profit:.0f}, shocked_profit={s_profit:.0f}", paired)
         except Exception as exc:
             record("Phase 4", "Paired common random numbers", "no exception", str(exc), False)
 
@@ -155,7 +155,8 @@ class TestPhase5:
                 explain_batch_quality, get_machine_risk, get_supplier_risk,
                 get_financials, run_scenario, list_decisions,
             )
-            record("Phase 5", "All 9 copilot tools importable", "no ImportError", "OK", True)
+            import_ok = True
+            record("Phase 5", "All 9 copilot tools importable", "no ImportError", "OK", import_ok)
         except ImportError as exc:
             record("Phase 5", "All 9 copilot tools importable", "no ImportError", str(exc), False)
 
@@ -202,7 +203,8 @@ class TestPhase5:
             get_machine_risk(machine_id="M001")
             get_supplier_risk(supplier_id="S001")
             get_financials()
-            record("Phase 5", "All read-only tools are side-effect free", "no exception", "OK", True)
+            read_only_ok = True
+            record("Phase 5", "All read-only tools are side-effect free", "no exception", "OK", read_only_ok)
         except Exception as exc:
             record("Phase 5", "All read-only tools are side-effect free", "no exception", str(exc), False)
 
