@@ -28,7 +28,7 @@
 | ID | Category | Prompt | Expected Tool | Tools Called | Pass | Latency |
 |---|---|---|---|---|---|---|
 | `KPI-01` | kpi_lookup | What is the overall executive KPI summary for the business? | `get_kpi_summary` | `get_kpi_summary` | **PASS** | 0.005s |
-| `KPI-02` | kpi_lookup | Can you provide the executive summary of our overall gross profit and revenue? | `get_kpi_summary` | `get_kpi_summary` | **PASS** | 0.006s |
+| `KPI-02` | kpi_lookup | Can you provide the executive summary of our overall gross profit and revenue? | `get_kpi_summary` | `get_kpi_summary` | **PASS** | 0.004s |
 | `KPI-03` | kpi_lookup | What is our current portfolio gross margin percentage? | `get_kpi_summary` | `get_kpi_summary` | **PASS** | 0.004s |
 | `KPI-04` | kpi_lookup | How many batches have passed quality control overall? | `get_kpi_summary` | `get_kpi_summary` | **PASS** | 0.005s |
 | `KPI-05` | kpi_lookup | What is the portfolio loss-making SKU share across history? | `get_kpi_summary` | `get_kpi_summary` | **PASS** | 0.004s |
@@ -39,41 +39,41 @@
 | `KPI-10` | kpi_lookup | What are our overall revenue and gross margin metrics? | `get_kpi_summary` | `get_kpi_summary` | **PASS** | 0.004s |
 | `FC-01` | forecast | What is the 30-day demand forecast for product P0020? | `get_forecast` | `get_forecast` | **PASS** | 0.005s |
 | `FC-02` | forecast | Show me the prediction and confidence intervals for SKU P0087. | `get_forecast` | `get_forecast` | **PASS** | 0.005s |
-| `FC-03` | forecast | What is the forecast and ensemble WAPE for P0006? | `get_forecast` | `get_forecast` | **PASS** | 0.004s |
-| `FC-04` | forecast | Can you provide the expected units sold for product P0001? | `get_forecast` | `get_forecast` | **PASS** | 0.004s |
+| `FC-03` | forecast | What is the forecast and ensemble WAPE for P0006? | `get_forecast` | `get_forecast` | **PASS** | 0.005s |
+| `FC-04` | forecast | Can you provide the expected units sold for product P0001? | `get_forecast` | `get_forecast` | **PASS** | 0.005s |
 | `FC-05` | forecast | What is the daily demand forecast for P0039? | `get_forecast` | `get_forecast` | **PASS** | 0.005s |
 | `FC-06` | forecast | Provide the 30-day forecast and P10/P90 intervals for P0051. | `get_forecast` | `get_forecast` | **PASS** | 0.005s |
 | `FC-07` | forecast | What is the expected demand for SKU P0016 over the next month? | `get_forecast` | `get_forecast` | **PASS** | 0.005s |
 | `FC-08` | forecast | Show the prediction metrics and R² at daily grain for P0078. | `get_forecast` | `get_forecast` | **PASS** | 0.005s |
 | `FC-09` | forecast | What is the forecasted demand volume for medicine P0024? | `get_forecast` | `get_forecast` | **PASS** | 0.005s |
-| `FC-10` | forecast | Give me the forecast and interval bounds for SKU P0084. | `get_forecast` | `get_forecast` | **PASS** | 0.004s |
+| `FC-10` | forecast | Give me the forecast and interval bounds for SKU P0084. | `get_forecast` | `get_forecast` | **PASS** | 0.005s |
 | `BQ-01` | batch_quality | Why did batch B100001 require a retest? | `explain_batch_quality` | `explain_batch_quality` | **PASS** | 0.002s |
 | `BQ-02` | batch_quality | Explain the quality deviation and anomaly score for batch B100004. | `explain_batch_quality` | `explain_batch_quality` | **PASS** | 0.002s |
-| `BQ-03` | batch_quality | What are the out-of-bounds QC test parameters for batch B100012? | `explain_batch_quality` | `explain_batch_quality` | **PASS** | 0.002s |
-| `BQ-04` | batch_quality | Why was batch B100025 flagged as anomalous? | `explain_batch_quality` | `explain_batch_quality` | **PASS** | 0.003s |
+| `BQ-03` | batch_quality | What are the out-of-bounds QC test parameters for batch B100012? | `explain_batch_quality` | `explain_batch_quality` | **PASS** | 0.003s |
+| `BQ-04` | batch_quality | Why was batch B100025 flagged as anomalous? | `explain_batch_quality` | `explain_batch_quality` | **PASS** | 0.004s |
 | `BQ-05` | batch_quality | Analyze the quality test results and robust z-scores for batch B100030. | `explain_batch_quality` | `explain_batch_quality` | **PASS** | 0.002s |
 | `BQ-06` | batch_quality | Explain the release status and assay/dissolution metrics for B100050. | `explain_batch_quality` | `explain_batch_quality` | **PASS** | 0.002s |
-| `BQ-07` | batch_quality | What caused the quality failure or retest for batch B100075? | `explain_batch_quality` | `explain_batch_quality` | **PASS** | 0.002s |
-| `BQ-08` | batch_quality | Provide a detailed batch quality deviation report for B100099. | `explain_batch_quality` | `explain_batch_quality` | **PASS** | 0.002s |
-| `BQ-09` | batch_quality | Why did batch B100105 receive a low quality score? | `explain_batch_quality` | `explain_batch_quality` | **PASS** | 0.002s |
-| `BQ-10` | batch_quality | Explain the Isolation Forest anomaly score for batch B100120. | `explain_batch_quality` | `explain_batch_quality` | **PASS** | 0.002s |
-| `MM-01` | machine_maintenance | What is the failure risk and sensor telemetry for machine M001? | `get_machine_risk` | `get_machine_risk` | **PASS** | 0.002s |
+| `BQ-07` | batch_quality | What caused the quality failure or retest for batch B100075? | `explain_batch_quality` | `explain_batch_quality` | **PASS** | 0.003s |
+| `BQ-08` | batch_quality | Provide a detailed batch quality deviation report for B100099. | `explain_batch_quality` | `explain_batch_quality` | **PASS** | 0.003s |
+| `BQ-09` | batch_quality | Why did batch B100105 receive a low quality score? | `explain_batch_quality` | `explain_batch_quality` | **PASS** | 0.003s |
+| `BQ-10` | batch_quality | Explain the Isolation Forest anomaly score for batch B100120. | `explain_batch_quality` | `explain_batch_quality` | **PASS** | 0.003s |
+| `MM-01` | machine_maintenance | What is the failure risk and sensor telemetry for machine M001? | `get_machine_risk` | `get_machine_risk` | **PASS** | 0.003s |
 | `MM-02` | machine_maintenance | Check the vibration and temperature readings for machine M002. | `get_machine_risk` | `get_machine_risk` | **PASS** | 0.002s |
 | `MM-03` | machine_maintenance | What is the maintenance status and days since last service for M005? | `get_machine_risk` | `get_machine_risk` | **PASS** | 0.002s |
-| `MM-04` | machine_maintenance | Assess the operational health and risk tier of machine M010. | `get_machine_risk` | `get_machine_risk` | **PASS** | 0.002s |
+| `MM-04` | machine_maintenance | Assess the operational health and risk tier of machine M010. | `get_machine_risk` | `get_machine_risk` | **PASS** | 0.003s |
 | `MM-05` | machine_maintenance | Does machine M015 show elevated vibration or temperature anomalies? | `get_machine_risk` | `get_machine_risk` | **PASS** | 0.002s |
 | `MM-06` | machine_maintenance | What is the failure probability and operating hours for M020? | `get_machine_risk` | `get_machine_risk` | **PASS** | 0.002s |
-| `MM-07` | machine_maintenance | Check if packaging line machine M025 requires urgent maintenance. | `get_machine_risk` | `get_machine_risk` | **PASS** | 0.002s |
-| `MM-08` | machine_maintenance | What are the latest sensor readings and risk tier for machine M030? | `get_machine_risk` | `get_machine_risk` | **PASS** | 0.002s |
+| `MM-07` | machine_maintenance | Check if packaging line machine M025 requires urgent maintenance. | `get_machine_risk` | `get_machine_risk` | **PASS** | 0.003s |
+| `MM-08` | machine_maintenance | What are the latest sensor readings and risk tier for machine M030? | `get_machine_risk` | `get_machine_risk` | **PASS** | 0.003s |
 | `MM-09` | machine_maintenance | Show me the maintenance history and pressure for machine M035. | `get_machine_risk` | `get_machine_risk` | **PASS** | 0.003s |
-| `MM-10` | machine_maintenance | Is machine M040 at risk of unscheduled downtime? | `get_machine_risk` | `get_machine_risk` | **PASS** | 0.002s |
-| `FIN-01` | financial_impact | What are the financial cost lines and gross margin for the Analgesic category? | `get_financials` | `get_financials` | **PASS** | 0.004s |
+| `MM-10` | machine_maintenance | Is machine M040 at risk of unscheduled downtime? | `get_machine_risk` | `get_machine_risk` | **PASS** | 0.003s |
+| `FIN-01` | financial_impact | What are the financial cost lines and gross margin for the Analgesic category? | `get_financials` | `get_financials` | **PASS** | 0.006s |
 | `FIN-02` | financial_impact | What is the revenue, COGS, and profit breakdown for Gastro products? | `get_financials` | `get_financials` | **PASS** | 0.005s |
 | `FIN-03` | financial_impact | Show me the financial performance and margin for Cardiovascular medications. | `get_financials` | `get_financials` | **PASS** | 0.005s |
 | `FIN-04` | financial_impact | What are the logistics, holding, and scrap costs for Antibiotic category? | `get_financials` | `get_financials` | **PASS** | 0.005s |
-| `FIN-05` | financial_impact | Is product P0020 profitable or loss-making? | `get_financials` | `get_financials` | **PASS** | 0.002s |
-| `FIN-06` | financial_impact | What is the P&L cost breakdown for product P0001? | `get_financials` | `get_financials` | **PASS** | 0.002s |
-| `FIN-07` | financial_impact | What is the modeled cost of poor quality for the Antidiabetic portfolio? | `get_financials` | `get_financials` | **PASS** | 0.004s |
+| `FIN-05` | financial_impact | Is product P0020 profitable or loss-making? | `get_financials` | `get_financials` | **PASS** | 0.003s |
+| `FIN-06` | financial_impact | What is the P&L cost breakdown for product P0001? | `get_financials` | `get_financials` | **PASS** | 0.003s |
+| `FIN-07` | financial_impact | What is the modeled cost of poor quality for the Antidiabetic portfolio? | `get_financials` | `get_financials` | **PASS** | 0.005s |
 | `FIN-08` | financial_impact | Show the gross margin and cost breakdown for Antihistamine products. | `get_financials` | `get_financials` | **PASS** | 0.005s |
 | `FIN-09` | financial_impact | What are the overall portfolio holding costs and scrap costs? | `get_financials` | `get_financials` | **PASS** | 0.002s |
 | `FIN-10` | financial_impact | Show the financial impact and COGS for product P0006. | `get_financials` | `get_financials` | **PASS** | 0.003s |

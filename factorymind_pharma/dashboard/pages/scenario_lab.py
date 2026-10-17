@@ -9,7 +9,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 import dash
 from dash import html, dcc, Input, Output, State, callback
-import plotly.graph_objects as go
 import yaml
 from pathlib import Path
 
@@ -22,7 +21,6 @@ from factorymind_pharma.contracts.scenario import (
     ColdChainEvent,
     QualityShift,
 )
-from dashboard.components.theme import CHART_COLORS, make_chart_layout
 from dashboard.components.header import render_page_header, PAGE_METADATA
 from dashboard.components.kpi import kpi_card
 
@@ -116,10 +114,7 @@ layout = html.Div([
             ], style={"display": "flex", "alignItems": "center", "marginBottom": "16px"}),
 
             dcc.Loading(
-                html.Div([
-                    html.Div(id="d10-metrics-strip", className="kpi-row", style={"marginBottom": "16px"}),
-                    dcc.Graph(id="d10-fan-chart", config={"displayModeBar": False}),
-                ]),
+                html.Div(id="d10-metrics-strip", className="kpi-row"),
                 color="var(--accent)",
                 type="dot",
             ),
@@ -152,7 +147,6 @@ layout = html.Div([
 @callback(
     [
         Output("d10-metrics-strip", "children"),
-        Output("d10-fan-chart", "figure"),
         Output("d10-mitigation-table", "children"),
         Output("d10-run-status", "children"),
     ],
@@ -197,46 +191,10 @@ def run_simulation(n_clicks, horizon, shock_type, target_id, n_paths):
                  icon_name="chart", icon_cls="coral" if res.profit_delta < 0 else "green"),
         kpi_card("Profit-at-Risk (PaR P5)", f"${res.profit_at_risk_p5:,.0f}", "95% confidence downside",
                  color="var(--warning)", icon_name="alert", icon_cls="amber"),
-        kpi_card("Fill Rate (Base → Shock)", f"{res.baseline_metrics.fill_rate_p50*100:.1f}% → {res.shocked_metrics.fill_rate_p50*100:.1f}%",
-                 "Order fulfillment impact", icon_name="trend", icon_cls="teal"),
         kpi_card("Stockout Risk Change", f"{res.p_stockout_delta*100:+.2f}%", "Probability shift",
                  color="var(--danger)" if res.p_stockout_delta > 0 else "var(--success)",
                  icon_name="trend", icon_cls="coral" if res.p_stockout_delta > 0 else "green"),
     ]
-
-    # 2. Fan Chart: Fill Rate & P(Stockout)
-    fig = go.Figure()
-    fig.add_trace(go.Bar(
-        name="Baseline",
-        x=["Fill Rate (P5)", "Fill Rate (Median)", "Fill Rate (P95)", "Stockout Risk"],
-        y=[
-            res.baseline_metrics.fill_rate_p5 * 100,
-            res.baseline_metrics.fill_rate_p50 * 100,
-            res.baseline_metrics.fill_rate_p95 * 100,
-            res.baseline_metrics.p_stockout_mean * 100,
-        ],
-        marker_color=CHART_COLORS["chart_1"],
-    ))
-    fig.add_trace(go.Bar(
-        name="Shocked Scenario",
-        x=["Fill Rate (P5)", "Fill Rate (Median)", "Fill Rate (P95)", "Stockout Risk"],
-        y=[
-            res.shocked_metrics.fill_rate_p5 * 100,
-            res.shocked_metrics.fill_rate_p50 * 100,
-            res.shocked_metrics.fill_rate_p95 * 100,
-            res.shocked_metrics.p_stockout_mean * 100,
-        ],
-        marker_color=CHART_COLORS["chart_3"],
-    ))
-
-    layout = make_chart_layout(
-        title="Key Performance Metrics — Baseline vs Shocked",
-        height=320,
-        yaxis_title="Percentage (%)",
-        margin={"l": 45, "r": 20, "t": 40, "b": 40},
-    )
-    layout["barmode"] = "group"
-    fig.update_layout(**layout)
 
     mit_rows = []
     for rank, m in enumerate(res.ranked_mitigations, start=1):
@@ -268,7 +226,7 @@ def run_simulation(n_clicks, horizon, shock_type, target_id, n_paths):
     ], className="data-table")
 
     status_msg = f"Completed {n_paths} paths over {horizon} days using Common Random Numbers (seed=42)."
-    return metrics_strip, fig, mit_table, status_msg
+    return metrics_strip, mit_table, status_msg
 
 
 @callback(Output("d10-assumptions-drawer", "children"), Input("d10-assumptions-drawer", "id"))
