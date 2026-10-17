@@ -1,52 +1,101 @@
-/* FactoryMind Pharma — Design Tokens
-   Theme: Light, intentional, pharma/clinical — NOT default AI-generated
-   Palette: warm off-white base, ink text, muted teal accent, restraint.
-   All components consume these variables; no hardcoded hex values in components.
+/* FactoryMind AI — Design Tokens v2
+   Theme: Light content, deep-coloured navigation, richer colour.
+   All components MUST consume these variables; no hardcoded hex anywhere.
+   Source of truth: also read by components/theme.py for Plotly template.
 */
 
 :root {
-  /* ── Surfaces ─────────────────────────────────────────────── */
-  --bg:            #F6F3EE;     /* warm off-white — NOT pure white */
-  --surface:       #FDFBF7;     /* card/panel background */
-  --surface-alt:   #F0EDE7;     /* alternate surface (table rows, sidebar) */
-  --border:        #DDD9D1;     /* 1px borders — thin, not heavy */
+  /* ── Page & Surface ──────────────────────────────────────────── */
+  --bg:              #F4F1EA;   /* warm off-white page background */
+  --surface:         #FFFEFB;   /* card / panel surface */
+  --surface-alt:     #EEE9DF;   /* alternate surface (table stripes, chips) */
+  --border:          #D8D3CA;   /* 1px borders — thin, not heavy */
+  --border-strong:   #B8B2A8;   /* stronger borders / dividers */
 
-  /* ── Text ──────────────────────────────────────────────────── */
-  --text:          #1C1B1A;     /* near-black — NOT pure #000 */
-  --text-muted:    #6B6560;     /* secondary labels, metadata */
-  --text-xmuted:   #9C968E;     /* tertiary / disabled */
+  /* ── Sidebar (deep-ink navigation) ──────────────────────────── */
+  --sidebar-bg:      #12343B;   /* deep ink-teal sidebar */
+  --sidebar-text:    #E6F1F0;   /* sidebar label text */
+  --sidebar-muted:   #7FAEB0;   /* secondary / dimmed sidebar text */
+  --sidebar-active:  #1FB5A8;   /* active pill (bright teal) */
+  --sidebar-hover:   rgba(31,181,168,0.15); /* hover tint on sidebar items */
+  --sidebar-border:  rgba(230,241,240,0.12); /* subtle internal sidebar border */
+  --topbar-bg:       #FFFEFB;   /* top bar matches surface */
 
-  /* ── Accent (muted teal — clinical without being sterile-blue) */
-  --accent:        #2D7D7B;     /* primary accent */
-  --accent-muted:  #4D9E9C;     /* hover / lighter tonal variant */
-  --accent-pale:   #D6EEED;     /* very light accent for backgrounds */
-  --accent-dark:   #1A5250;     /* dark tonal for pressed/active */
+  /* ── Text ────────────────────────────────────────────────────── */
+  --text:            #1C1B1A;   /* near-black — NOT pure #000 */
+  --text-muted:      #6B6560;   /* secondary labels, metadata */
+  --text-xmuted:     #9C968E;   /* tertiary / disabled */
 
-  /* ── Semantic ──────────────────────────────────────────────── */
-  --success:       #3D7A4F;
-  --success-pale:  #D8EDE0;
-  --warning:       #9A6B1A;
-  --warning-pale:  #FDF0D5;
-  --danger:        #8B2E2E;
-  --danger-pale:   #F5DADA;
+  /* ── Primary accent ─────────────────────────────────────────── */
+  --primary:         #1F8A85;   /* primary teal */
+  --primary-pale:    #D0EEEC;   /* very light primary tint */
+  --accent:          #1F8A85;   /* primary teal */
+  --accent-muted:    #3DA8A3;   /* lighter tonal for hover */
+  --accent-pale:     #D0EEEC;   /* very light accent tint */
+  --accent-dark:     #145E5A;   /* pressed / active dark */
 
-  /* ── Chart palette (derived from accent, 3 tonal variations) */
-  --chart-1:       #2D7D7B;
-  --chart-2:       #7AB5B4;
-  --chart-3:       #C45B3C;     /* terracotta for contrast */
-  --chart-4:       #6B5B8A;     /* plum for 4th series */
-  --chart-5:       #D4A843;     /* warm amber */
+  /* ── Comparison Pairs ────────────────────────────────────────── */
+  --compare-baseline:  #7C8A99; /* neutral slate */
+  --compare-optimized: #1F8A85; /* saturated teal */
 
-  /* ── Typography ────────────────────────────────────────────── */
-  --font-body:    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-heading: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono:    'Inter', 'DM Mono', monospace;
+  /* ── Time Series ─────────────────────────────────────────────── */
+  --series-actual:     #12343B; /* dark ink-teal solid */
+  --series-forecast:   #E2604A; /* coral dashed */
+  --series-band:       rgba(226, 96, 74, 0.12); /* pale tint */
 
-  /* ── Spacing / Radius / Shadow ─────────────────────────────── */
-  --radius-sm:    4px;
-  --radius-md:    8px;
-  --radius-lg:    12px;
-  --shadow-xs:    0 1px 2px rgba(28,27,26,0.06);
-  --shadow-sm:    0 1px 4px rgba(28,27,26,0.08), 0 0 1px rgba(28,27,26,0.04);
-  --shadow-md:    0 4px 12px rgba(28,27,26,0.10), 0 1px 3px rgba(28,27,26,0.06);
+  /* ── Series colours (colour-blind safe, 6 hues) ─────────────── */
+  --chart-1:         #1F8A85;   /* teal — primary */
+  --chart-2:         #5B4B9A;   /* indigo */
+  --chart-3:         #E2604A;   /* coral */
+  --chart-4:         #E5A93C;   /* amber */
+  --chart-5:         #3F8F5B;   /* green */
+  --chart-6:         #3B82A0;   /* sky */
+
+  /* ── Semantic ────────────────────────────────────────────────── */
+  --success:         #2E7D4F;
+  --success-pale:    #D4EDE0;
+  --warning:         #B07D14;
+  --warning-pale:    #FDF0D0;
+  --danger:          #C0392B;
+  --danger-pale:     #FAD9D5;
+  --info:            #3B82A0;
+  --info-pale:       #D6EBF5;
+
+  /* ── Status Tokens (order and decision lifecycle) ────────────── */
+  --status-delivered:  #2E7D4F; /* green */
+  --status-auto:       #2E7D4F;
+  --status-intransit:  #3B82A0; /* sky */
+  --status-pending:    #3B82A0;
+  --status-delayed:    #B07D14; /* amber */
+  --status-review:     #B07D14;
+  --status-cancelled:  #C0392B; /* coral-red */
+  --status-block:      #C0392B;
+
+  /* ── Architecture layer colours ─────────────────────────────── */
+  --layer-l1:        #6B8E8C;   /* L1 Sensing — gray-teal */
+  --layer-l2:        #1F8A85;   /* L2 Twin — teal */
+  --layer-l3:        #5B4B9A;   /* L3 Forecast — indigo */
+  --layer-l4:        #E2604A;   /* L4 Policy — coral */
+  --layer-l5:        #12343B;   /* L5 Tower — deep ink */
+
+  /* ── Typography (Single UI font token everywhere — no monospace) ─ */
+  --font-ui:        "Segoe UI", Inter, system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --font-heading:   var(--font-ui);
+  --font-body:      var(--font-ui);
+  --font-mono:      var(--font-ui);
+
+  /* ── Spacing / Radius / Shadow ───────────────────────────────── */
+  --radius-xs:      4px;
+  --radius-sm:      8px;
+  --radius-md:      12px;
+  --radius-lg:      16px;
+  --radius-pill:    100px;
+  --shadow-xs:      0 1px 2px rgba(18,52,59,0.06);
+  --shadow-sm:      0 1px 4px rgba(18,52,59,0.08), 0 0 1px rgba(18,52,59,0.04);
+  --shadow-md:      0 4px 16px rgba(18,52,59,0.12), 0 1px 4px rgba(18,52,59,0.06);
+  --shadow-lg:      0 8px 32px rgba(18,52,59,0.16), 0 2px 8px rgba(18,52,59,0.08);
+  --shadow-card:    0 2px 8px rgba(18,52,59,0.08), 0 0 0 1px rgba(18,52,59,0.04);
+
+  /* ── Transition ──────────────────────────────────────────────── */
+  --transition:     150ms ease;
 }

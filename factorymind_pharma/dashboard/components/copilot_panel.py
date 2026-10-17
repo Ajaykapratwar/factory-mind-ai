@@ -10,6 +10,7 @@ Features:
 """
 from __future__ import annotations
 from typing import List, Optional
+import os
 import dash
 from dash import html, dcc, callback, Input, Output, State, ALL
 from factorymind_pharma.services.tower_svc.copilot.client import CopilotClient
@@ -31,7 +32,7 @@ def render_copilot_panel() -> html.Div:
         # Floating Trigger Button
         html.Button(
             [
-                html.Span("✦", style={"marginRight": "8px", "fontWeight": "bold"}),
+                html.Span(className="icon-mask icon-spark", style={"marginRight": "8px"}),
                 "AI Copilot",
             ],
             id="copilot-toggle-btn",
@@ -77,21 +78,28 @@ def render_copilot_panel() -> html.Div:
                 # Drawer Header
                 html.Div([
                     html.Div([
-                        html.Span("✦", style={"color": "var(--accent)", "marginRight": "6px", "fontWeight": "bold"}),
+                        html.Span(className="icon-mask icon-spark", style={"color": "var(--accent)", "marginRight": "8px"}),
                         html.Span("FactoryMind AI Copilot", style={"fontWeight": "600", "fontSize": "1.05rem", "color": "var(--text)"}),
-                    ]),
-                    html.Button(
-                        "✕",
-                        id="copilot-close-btn",
-                        style={
-                            "background": "none",
-                            "border": "none",
-                            "fontSize": "1.1rem",
-                            "color": "var(--text-muted)",
-                            "cursor": "pointer",
-                            "padding": "4px",
-                        },
-                    ),
+                    ], style={"display": "flex", "alignItems": "center"}),
+                    html.Div([
+                        html.Span(
+                            "Copilot Ready" if bool(os.environ.get("GROQ_API_KEY", "").strip()) else "No Groq Key",
+                            className="copilot-chip-header " + ("ready" if bool(os.environ.get("GROQ_API_KEY", "").strip()) else "no-key"),
+                            style={"marginRight": "10px"},
+                        ),
+                        html.Button(
+                            "✕",
+                            id="copilot-close-btn",
+                            style={
+                                "background": "none",
+                                "border": "none",
+                                "fontSize": "1.1rem",
+                                "color": "var(--text-muted)",
+                                "cursor": "pointer",
+                                "padding": "4px",
+                            },
+                        ),
+                    ], style={"display": "flex", "alignItems": "center"}),
                 ], style={
                     "padding": "16px 20px",
                     "borderBottom": "1px solid var(--border)",
@@ -105,7 +113,7 @@ def render_copilot_panel() -> html.Div:
                 html.Div([
                     html.Span(
                         "Operational Decision Support • Zero-Ungrounded-Numbers Gate",
-                        style={"fontSize": "0.75rem", "color": "var(--text-muted)", "fontFamily": "var(--font-mono)"}
+                        style={"fontSize": "0.75rem", "color": "var(--text-muted)"}
                     ),
                 ], style={"padding": "8px 20px", "borderBottom": "1px solid var(--border)", "backgroundColor": "var(--surface)"}),
 
@@ -278,14 +286,15 @@ def handle_copilot_query(submit_clicks, chip_clicks, input_val, current_children
             html.Span(f"Tool: {t.get('tool')}", style={"fontWeight": "600"}),
             html.Br(),
             html.Span(f"Source: {t.get('provenance', {}).get('source_table')} | As-of: {t.get('provenance', {}).get('as_of')}"),
-        ], style={"fontSize": "0.72rem", "fontFamily": "var(--font-mono)", "padding": "4px 0"}))
+        ], style={"fontSize": "0.72rem", "padding": "4px 0"}))
 
     ai_bubble = html.Div([
         # Sender line
         html.Div([
-            html.Span("✦ FactoryMind AI", style={"fontSize": "0.75rem", "fontWeight": "600", "color": "var(--accent)"}),
+            html.Span(className="icon-mask icon-spark", style={"color": "var(--accent)", "marginRight": "4px"}),
+            html.Span("FactoryMind AI", style={"fontSize": "0.75rem", "fontWeight": "600", "color": "var(--accent)"}),
             html.Span(f" • {resp.model_used}", style={"fontSize": "0.7rem", "color": "var(--text-xmuted)"}),
-        ], style={"marginBottom": "4px"}),
+        ], style={"display": "flex", "alignItems": "center", "marginBottom": "4px"}),
 
         # Answer text
         html.Div(resp.answer, style={"fontSize": "0.85rem", "color": "var(--text)", "lineHeight": "1.45"}),
@@ -296,7 +305,6 @@ def handle_copilot_query(submit_clicks, chip_clicks, input_val, current_children
             style={
                 "fontSize": "0.72rem",
                 "color": "var(--text-muted)",
-                "fontFamily": "var(--font-mono)",
                 "backgroundColor": "var(--surface-alt)",
                 "padding": "4px 8px",
                 "borderRadius": "var(--radius-sm)",

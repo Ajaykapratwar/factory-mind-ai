@@ -1,21 +1,34 @@
 """
 dashboard/pages/inventory_optimization.py — Dashboard 4 (Phase 3)
 Safety Stock Optimization and Reorder Points.
+Strict tokens.css compliance with zero hardcoded hex.
 """
 
 import sys, os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
+from pathlib import Path
+_PKG_DIR = Path(__file__).resolve().parent.parent.parent
+if str(_PKG_DIR) not in sys.path:
+    sys.path.insert(0, str(_PKG_DIR))
 
 import dash
 from dash import html, dcc, Input, Output, callback
 import plotly.graph_objects as go
 import pandas as pd
-from pathlib import Path
+
+from dashboard.components.charts import (
+    safety_stock_compare_chart,
+    CHART_COLORS,
+    COMPARE_COLORS,
+    make_chart_layout,
+)
+from dashboard.components.kpi import kpi_card
+from dashboard.components.header import render_page_header, PAGE_METADATA
 
 dash.register_page(__name__, path="/inventory-opt", name="Inventory Opt", order=4)
 
-_BASE    = Path(__file__).parent.parent.parent
+_BASE = Path(__file__).parent.parent.parent
 _OUTPUTS = _BASE.parent / "data" / "outputs"
+
 
 def _load_safety_stock() -> pd.DataFrame:
     p = _OUTPUTS / "safety_stock_optimized.parquet"
@@ -23,34 +36,6 @@ def _load_safety_stock() -> pd.DataFrame:
         return pd.read_parquet(p, engine="pyarrow")
     return pd.DataFrame()
 
-layout = html.Div([
-
-    html.Div([
-        html.H1("Safety Stock Optimization", className="page-title"),
-        html.P("Phase 3 · Data-driven safety stock buffers and reorder points based on ensemble residual variance.",
-               className="page-subtitle"),
-    ], className="page-header"),
-
-    html.Div(id="d4-kpi-row", className="kpi-row"),
-
-    html.Div([
-        html.Div([
-            html.H2("Safety Stock Change (Old vs New)", className="section-title"),
-            dcc.Graph(id="d4-ss-comparison", config={"displayModeBar": False}),
-        ], className="card half-width"),
-        
-        html.Div([
-            html.H2("Top Holding Cost Impact", className="section-title"),
-            html.Div(id="d4-impact-table"),
-        ], className="card half-width"),
-    ], className="two-col-row"),
-    
-    html.Div([
-        html.H2("SKU Optimization Details", className="section-title"),
-        html.Div(id="d4-full-table", style={"overflowX": "auto"}),
-    ], className="card"),
-
-], className="page-content")
 
 def _load_remeasure() -> pd.DataFrame:
     p = _OUTPUTS / "phase3_remeasure.csv"
@@ -58,11 +43,56 @@ def _load_remeasure() -> pd.DataFrame:
         return pd.read_csv(p)
     return pd.DataFrame()
 
+
+meta = PAGE_METADATA.get("/inventory-opt", {})
+
+layout = html.Div([
+    # Shared page header (eyebrow is driven by topbar: Layer L4 Policy)
+    render_page_header(meta.get("subtitle", "Data-driven safety stock buffers and reorder points based on ensemble residual variance")),
+
+    html.Div(id="d4-kpi-row", className="kpi-row"),
+
+    html.Div([
+        html.Div([
+            html.Div([
+                html.H2("Safety Stock Change (Baseline vs Optimized Top 20)", className="section-title"),
+                html.Div("Safety Stock Units Comparison", className="section-subtitle"),
+            ], className="card-header-flex"),
+            dcc.Loading(
+                dcc.Graph(id="d4-ss-comparison", config={"displayModeBar": False}),
+                color="var(--accent)",
+                type="dot",
+            ),
+        ], className="card", style={"flex": "1.2"}),
+
+        html.Div([
+            html.Div([
+                html.H2("Top Holding Cost Reductions", className="section-title"),
+                html.Div("Highest inventory carrying cost savings", className="section-subtitle"),
+            ], className="card-header-flex"),
+            html.Div(id="d4-impact-table"),
+        ], className="card", style={"flex": "1"}),
+    ], className="two-col-row"),
+
+    html.Div([
+        html.Div([
+            html.H2("SKU Inventory Policy Details", className="section-title"),
+            html.Div("Buffer targets, standard deviation of demand, and reorder levels across all SKUs", className="section-subtitle"),
+        ], className="card-header-flex"),
+        html.Div(id="d4-full-table", className="scroll-x scroll-y", style={"maxHeight": "420px"}),
+    ], className="card"),
+
+], className="page-content")
+
+
 @callback(Output("d4-kpi-row", "children"), Input("d4-kpi-row", "id"))
 def kpis(_):
     df = _load_safety_stock()
     if df.empty:
-        return html.P("No safety stock data. Run run_phase2.py first.", style={"color": "var(--danger)"})
+        return html.Div([
+            html.Span(className="icon-mask icon-alert", style={"color": "var(--danger)", "marginRight": "8px"}),
+            html.Span("No safety stock data. Run run_phase2.py first.", style={"color": "var(--danger)"}),
+        ], className="card empty-state")
 
     net_hc_change = df["holding_cost_change"].sum() if "holding_cost_change" in df.columns else 0
     skus_optimized = len(df)
@@ -78,92 +108,111 @@ def kpis(_):
         if not row_fr.empty:
             fr_sim = f"{float(row_fr['measured_value'].iloc[0]):.1f}% (simulated)"
 
-    kpi_cards = [
-        ("SKUs Optimized", f"{skus_optimized:,}", "Finished goods analyzed", "var(--text)"),
-        ("Net Holding Cost Change", f"${net_hc_change:+,.0f}", "Annualized carrying impact", "var(--success)" if net_hc_change <= 0 else "var(--warning)"),
-        ("Simulated Stockout Reduction", so_red, "Service level preservation", "var(--success)"),
-        ("Simulated Fill Rate", fr_sim, "Customer order fulfillment", "var(--success)"),
+    return [
+        kpi_card(
+            label="SKUs Optimized",
+            raw_value=skus_optimized,
+            subtext="Finished goods analyzed",
+            color="var(--text)",
+            icon_name="box",
+            icon_cls="teal",
+        ),
+        kpi_card(
+            label="Net Holding Cost Change",
+            raw_value=net_hc_change,
+            subtext="Annualized carrying impact",
+            color="var(--success)" if net_hc_change <= 0 else "var(--warning)",
+            icon_name="dollar",
+            icon_cls="green" if net_hc_change <= 0 else "amber",
+            is_currency=True,
+        ),
+        kpi_card(
+            label="Simulated Stockout Reduction",
+            raw_value=so_red,
+            subtext="Service level preservation",
+            color="var(--success)",
+            icon_name="check",
+            icon_cls="green",
+        ),
+        kpi_card(
+            label="Simulated Fill Rate",
+            raw_value=fr_sim,
+            subtext="Customer order fulfillment",
+            color="var(--success)",
+            icon_name="activity",
+            icon_cls="indigo",
+        ),
     ]
 
-    return [
-        html.Div([
-            html.Div(label, className="kpi-label"),
-            html.Div(value, className="kpi-value", style={"color": color}),
-            html.Div(subtext, className="kpi-subtext"),
-        ], className="kpi-card")
-        for label, value, subtext, color in kpi_cards
-    ]
 
 @callback(Output("d4-ss-comparison", "figure"), Input("d4-ss-comparison", "id"))
 def ss_compare(_):
     df = _load_safety_stock()
-    if df.empty or "baseline_safety_stock" not in df.columns:
-        return go.Figure()
-        
-    plot_df = df.dropna(subset=["baseline_safety_stock", "new_safety_stock"]).head(20) # show top 20 for readability
-    
-    fig = go.Figure()
-    fig.add_trace(go.Bar(
-        x=plot_df["product_id"],
-        y=plot_df["baseline_safety_stock"],
-        name="Baseline",
-        marker_color="#7AB5B4"
-    ))
-    fig.add_trace(go.Bar(
-        x=plot_df["product_id"],
-        y=plot_df["new_safety_stock"],
-        name="Optimized",
-        marker_color="#2D7D7B"
-    ))
-    
-    fig.update_layout(
-        barmode="group",
-        paper_bgcolor="#FDFBF7",
-        plot_bgcolor="#FDFBF7",
-        font={"family": "Inter, sans-serif", "color": "#1C1B1A"},
-        xaxis=dict(title="Product ID", gridcolor="#DDD9D1"),
-        yaxis=dict(title="Safety Stock (units)", gridcolor="#DDD9D1"),
-        margin={"l": 50, "r": 20, "t": 20, "b": 40},
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1, font=dict(family="Inter, sans-serif", size=11))
-    )
-    return fig
+    return safety_stock_compare_chart(df, height=340, top_n=20)
+
 
 @callback(Output("d4-impact-table", "children"), Input("d4-impact-table", "id"))
 def impact_table(_):
     df = _load_safety_stock()
     if df.empty or "holding_cost_change" not in df.columns:
-        return html.P("No data.")
-        
+        return html.Div("No holding cost data available.", className="empty-state-text")
+
     df_sorted = df.sort_values("holding_cost_change", ascending=True).head(5)
-    
+
     return html.Table([
-        html.Thead(html.Tr([html.Th("Product ID"), html.Th("Crit."), html.Th("Δ SS"), html.Th("Cost Change")])),
+        html.Thead(html.Tr([
+            html.Th("Product ID"),
+            html.Th("Criticality"),
+            html.Th("Δ Safety Stock", className="numeric"),
+            html.Th("Holding Cost Δ", className="numeric"),
+        ])),
         html.Tbody([
             html.Tr([
-                html.Td(str(row["product_id"])),
-                html.Td(str(row.get("criticality", "–")).title()),
-                html.Td(f"{row.get('ss_change', 0):+.0f}"),
-                html.Td(f"{row['holding_cost_change']:+,.0f}", style={"color": "var(--success)" if row["holding_cost_change"] <= 0 else "var(--warning)"}),
+                html.Td(str(row["product_id"]), style={"fontWeight": "600"}),
+                html.Td(html.Span(str(row.get("criticality", "–")).title(), className="badge badge-neutral")),
+                html.Td(f"{row.get('ss_change', 0):+.0f}", className="numeric"),
+                html.Td(
+                    f"-${abs(row['holding_cost_change']):,.0f}" if row['holding_cost_change'] < 0 else f"+${row['holding_cost_change']:,.0f}",
+                    className="numeric",
+                    style={"color": "var(--success)" if row["holding_cost_change"] <= 0 else "var(--warning)", "fontWeight": "600"},
+                ),
             ])
             for _, row in df_sorted.iterrows()
         ])
     ], className="data-table")
 
+
 @callback(Output("d4-full-table", "children"), Input("d4-full-table", "id"))
 def full_table(_):
     df = _load_safety_stock()
     if df.empty:
-        return html.P("No data.")
-        
-    cols = ["product_id", "criticality", "z_score", "sigma_demand", "baseline_safety_stock", "new_safety_stock", "new_reorder_point"]
-    show_cols = [c for c in cols if c in df.columns]
-    
+        return html.Div("No SKU records found.", className="empty-state-text")
+
+    cols = [
+        ("product_id", "Product ID", False),
+        ("criticality", "Criticality", False),
+        ("z_score", "Z-Score", True),
+        ("sigma_demand", "Sigma Demand", True),
+        ("baseline_safety_stock", "Baseline SS", True),
+        ("new_safety_stock", "Optimized SS", True),
+        ("new_reorder_point", "Reorder Pt", True),
+    ]
+    show_cols = [(c, title, is_num) for c, title, is_num in cols if c in df.columns]
+
     return html.Table([
-        html.Thead(html.Tr([html.Th(c.replace("_", " ").title()) for c in show_cols])),
+        html.Thead(html.Tr([
+            html.Th(title, className="numeric" if is_num else "")
+            for _, title, is_num in show_cols
+        ])),
         html.Tbody([
             html.Tr([
-                html.Td(f"{row[c]:.2f}" if isinstance(row[c], float) else str(row[c]))
-                for c in show_cols
+                html.Td(
+                    html.Span(str(row[c]).title(), className="badge badge-neutral") if c == "criticality"
+                    else (f"{row[c]:.2f}" if isinstance(row[c], float) else (f"{row[c]:,}" if isinstance(row[c], int) else str(row[c]))),
+                    className="numeric" if is_num else "",
+                    style={"fontWeight": "600"} if c == "product_id" else {},
+                )
+                for c, _, is_num in show_cols
             ])
             for _, row in df.iterrows()
         ])

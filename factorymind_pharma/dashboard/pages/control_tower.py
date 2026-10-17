@@ -16,6 +16,7 @@ from typing import List, Dict, Any
 from factorymind_pharma.services.tower_svc.decision_engine import DecisionEngine
 from factorymind_pharma.services.tower_svc.audit_log import AuditLog
 from factorymind_pharma.services.tower_svc.replay_clock import ReplayClock, FeedbackWriter, ModelLifecycleManager
+from dashboard.components.header import render_page_header, PAGE_METADATA
 
 dash.register_page(
     __name__,
@@ -23,6 +24,8 @@ dash.register_page(
     title="Control Tower — FactoryMind Pharma",
     name="Control Tower",
 )
+
+_META = PAGE_METADATA["/control-tower"]
 
 engine = DecisionEngine()
 replay_clock = ReplayClock()
@@ -41,12 +44,8 @@ def layout():
         # ── Header & Governance Strip ──────────────────────────────────
         html.Div([
             html.Div([
-                html.H1("L5 Control Tower & Orchestration", className="page-title"),
-                html.P(
-                    "Autonomous Decision Governance, Operational Approval Queue, and Closed-Loop Model Lifecycle.",
-                    className="page-subtitle",
-                ),
-            ]),
+                render_page_header(_META["subtitle"]),
+            ], style={"flex": "1"}),
             html.Div([
                 # Audit Verification Badge
                 html.Div(
@@ -60,7 +59,6 @@ def layout():
                         "padding": "6px 14px",
                         "fontSize": "0.8rem",
                         "fontWeight": "600",
-                        "fontFamily": "var(--font-mono)",
                         "display": "inline-block",
                         "marginRight": "12px",
                     },
@@ -80,15 +78,14 @@ def layout():
                         style={"width": "260px", "fontSize": "0.85rem"},
                     ),
                 ], style={"display": "flex", "alignItems": "center"}),
-            ], style={"display": "flex", "alignItems": "center"}),
-        ], className="page-header", style={"display": "flex", "justifyContent": "space-between", "alignItems": "flex-start", "marginBottom": "20px"}),
+            ], style={"display": "flex", "alignItems": "center", "marginTop": "8px"}),
+        ], style={"display": "flex", "justifyContent": "space-between", "alignItems": "flex-start", "marginBottom": "20px"}),
 
         # ── Replay Clock Controls (§11.1) ──────────────────────────────
         html.Div([
             html.Div([
                 html.Span("Simulation Replay Clock:", style={"fontWeight": "600", "fontSize": "0.85rem", "marginRight": "12px"}),
                 html.Span(id="replay-date-display", children=replay_clock.get_current_date(), style={
-                    "fontFamily": "var(--font-mono)",
                     "fontWeight": "700",
                     "backgroundColor": "var(--surface)",
                     "padding": "4px 10px",
@@ -142,13 +139,13 @@ def layout():
                     html.H2("Operational Approval Queue", style={"fontSize": "1.1rem", "fontWeight": "600", "marginBottom": "4px"}),
                     html.P("Decisions proposed by autonomous sensing and policy gates requiring human or role sign-off.", style={"fontSize": "0.8rem", "color": "var(--text-muted)", "marginBottom": "12px"}),
 
-                    # Tier Filter Tabs
+                    # Tier Filter Tabs as Segmented Control
                     html.Div([
-                        html.Button("All Decisions", id="filter-all-btn", className="queue-filter-btn", style={"marginRight": "6px"}),
-                        html.Button("BLOCK (QA Mandatory)", id="filter-block-btn", className="queue-filter-btn", style={"marginRight": "6px"}),
-                        html.Button("REVIEW", id="filter-review-btn", className="queue-filter-btn", style={"marginRight": "6px"}),
-                        html.Button("AUTO-ELIGIBLE", id="filter-auto-btn", className="queue-filter-btn"),
-                    ], style={"marginBottom": "16px"}),
+                        html.Button("All Decisions", id="filter-all-btn", className="segmented-control-btn active"),
+                        html.Button("BLOCK (QA Mandatory)", id="filter-block-btn", className="segmented-control-btn"),
+                        html.Button("REVIEW", id="filter-review-btn", className="segmented-control-btn"),
+                        html.Button("AUTO-ELIGIBLE", id="filter-auto-btn", className="segmented-control-btn"),
+                    ], className="segmented-control", style={"marginBottom": "16px"}),
                 ]),
 
                 # Queue Decision Cards Container
@@ -163,27 +160,27 @@ def layout():
 
                     html.Div([
                         html.Div("Active Champion:", style={"fontSize": "0.75rem", "color": "var(--text-muted)"}),
-                        html.Div("ensemble-champion-v1", style={"fontFamily": "var(--font-mono)", "fontWeight": "600", "fontSize": "0.85rem", "color": "var(--accent)"}),
+                        html.Div("ensemble-champion-v1", style={"fontWeight": "600", "fontSize": "0.85rem", "color": "var(--accent)"}),
                     ], style={"marginBottom": "8px"}),
 
                     html.Div([
                         html.Div("Champion WAPE (Holdout):", style={"fontSize": "0.75rem", "color": "var(--text-muted)"}),
-                        html.Div("20.20%", style={"fontFamily": "var(--font-mono)", "fontWeight": "600", "fontSize": "0.9rem"}),
+                        html.Div("20.20%", style={"fontWeight": "600", "fontSize": "0.9rem"}),
                     ], style={"marginBottom": "12px"}),
 
                     html.Div([
                         html.Div("Challenger Candidate:", style={"fontSize": "0.75rem", "color": "var(--text-muted)"}),
-                        html.Div("ensemble-challenger-v2 (Retrained)", style={"fontFamily": "var(--font-mono)", "fontWeight": "600", "fontSize": "0.85rem"}),
+                        html.Div("ensemble-challenger-v2 (Retrained)", style={"fontWeight": "600", "fontSize": "0.85rem"}),
                     ], style={"marginBottom": "8px"}),
 
                     html.Div([
                         html.Div("Challenger WAPE / Bias:", style={"fontSize": "0.75rem", "color": "var(--text-muted)"}),
-                        html.Div("17.80% WAPE (Bias: -0.40%)", style={"fontFamily": "var(--font-mono)", "fontWeight": "600", "fontSize": "0.85rem", "color": "var(--success)"}),
+                        html.Div("17.80% WAPE (Bias: -0.40%)", style={"fontWeight": "600", "fontSize": "0.85rem", "color": "var(--success)"}),
                     ], style={"marginBottom": "12px"}),
 
                     html.Div([
                         html.Div("WAPE Gain vs Champion:", style={"fontSize": "0.75rem", "color": "var(--text-muted)"}),
-                        html.Div("+2.40 pp (Exceeds ≥ 2.0% Gate)", style={"fontFamily": "var(--font-mono)", "fontWeight": "700", "fontSize": "0.85rem", "color": "var(--success)"}),
+                        html.Div("+2.40 pp (Exceeds ≥ 2.0% Gate)", style={"fontWeight": "700", "fontSize": "0.85rem", "color": "var(--success)"}),
                     ], style={"marginBottom": "16px"}),
 
                     html.Button(
@@ -216,17 +213,17 @@ def layout():
 
                     html.Div([
                         html.Span("30-Day Rolling Bias: ", style={"fontSize": "0.8rem", "color": "var(--text-muted)"}),
-                        html.Span("-0.85% (Safe, Gate ±5.0%)", style={"fontFamily": "var(--font-mono)", "fontWeight": "600", "fontSize": "0.8rem", "color": "var(--success)"}),
+                        html.Span("-0.85% (Safe, Gate ±5.0%)", style={"fontWeight": "600", "fontSize": "0.8rem", "color": "var(--success)"}),
                     ], style={"marginBottom": "8px"}),
 
                     html.Div([
                         html.Span("Covariate Shift (PSI): ", style={"fontSize": "0.8rem", "color": "var(--text-muted)"}),
-                        html.Span("0.048 (Normal, Gate 0.20)", style={"fontFamily": "var(--font-mono)", "fontWeight": "600", "fontSize": "0.8rem", "color": "var(--success)"}),
+                        html.Span("0.048 (Normal, Gate 0.20)", style={"fontWeight": "600", "fontSize": "0.8rem", "color": "var(--success)"}),
                     ], style={"marginBottom": "8px"}),
 
                     html.Div([
                         html.Span("Rolling WAPE Jump: ", style={"fontSize": "0.8rem", "color": "var(--text-muted)"}),
-                        html.Span("+0.0% (No spike)", style={"fontFamily": "var(--font-mono)", "fontWeight": "600", "fontSize": "0.8rem", "color": "var(--success)"}),
+                        html.Span("+0.0% (No spike)", style={"fontWeight": "600", "fontSize": "0.8rem", "color": "var(--success)"}),
                     ]),
                 ], style={
                     "backgroundColor": "var(--surface)",
@@ -247,15 +244,15 @@ def layout():
             "borderRadius": "var(--radius-md)",
             "padding": "16px 20px",
         }),
-    ], style={"padding": "24px 32px", "backgroundColor": "var(--bg)", "minHeight": "100vh"})
+    ], className="page-content")
 
 
 def _render_decision_cards(decisions: List[Any]) -> html.Div:
     """Renders visual cards for decisions with tier badges and action buttons."""
     cards = []
     for d in decisions:
-        tier_color = "var(--danger)" if d.rule_tier == "BLOCK" else ("var(--warning)" if d.rule_tier == "REVIEW" else "var(--success)")
-        tier_bg = "var(--danger-pale)" if d.rule_tier == "BLOCK" else ("var(--warning-pale)" if d.rule_tier == "REVIEW" else "var(--success-pale)")
+        tier_color = "var(--danger)" if d.rule_tier == "BLOCK" else ("var(--warning)" if d.rule_tier == "REVIEW" else "var(--primary)")
+        tier_bg = "var(--danger-pale)" if d.rule_tier == "BLOCK" else ("var(--warning-pale)" if d.rule_tier == "REVIEW" else "var(--primary-pale)")
 
         status_color = "var(--success)" if d.status == "approved" or d.status == "auto_executed" else ("var(--danger)" if d.status == "rejected" else "var(--text)")
         is_pending = (d.status == "pending_review")
@@ -264,7 +261,7 @@ def _render_decision_cards(decisions: List[Any]) -> html.Div:
             # Card Top Row: ID, Tier Badge, Status
             html.Div([
                 html.Div([
-                    html.Span(d.id, style={"fontFamily": "var(--font-mono)", "fontWeight": "700", "fontSize": "0.9rem", "marginRight": "10px"}),
+                    html.Span(d.id, style={"fontWeight": "700", "fontSize": "0.9rem", "marginRight": "10px"}),
                     html.Span(
                         d.rule_tier,
                         style={
@@ -279,7 +276,7 @@ def _render_decision_cards(decisions: List[Any]) -> html.Div:
                     ),
                 ]),
                 html.Div([
-                    html.Span(f"Confidence: {d.confidence:.2f} | ", style={"fontSize": "0.75rem", "color": "var(--text-muted)", "fontFamily": "var(--font-mono)"}),
+                    html.Span(f"Confidence: {d.confidence:.2f} | ", style={"fontSize": "0.75rem", "color": "var(--text-muted)"}),
                     html.Span(d.status.upper(), style={"fontSize": "0.78rem", "fontWeight": "700", "color": status_color}),
                 ]),
             ], style={"display": "flex", "justifyContent": "space-between", "marginBottom": "8px"}),
@@ -287,7 +284,7 @@ def _render_decision_cards(decisions: List[Any]) -> html.Div:
             # Recommended Action & Subjects
             html.Div(d.recommended_action, style={"fontSize": "0.88rem", "fontWeight": "600", "color": "var(--text)", "marginBottom": "6px"}),
             html.Div([
-                html.Span(f"Entities: {', '.join(d.subject_ids)} • Type: {d.type}", style={"fontSize": "0.75rem", "color": "var(--text-muted)", "fontFamily": "var(--font-mono)"}),
+                html.Span(f"Entities: {', '.join(d.subject_ids)} • Type: {d.type}", style={"fontSize": "0.75rem", "color": "var(--text-muted)"}),
             ], style={"marginBottom": "8px"}),
 
             # Rationale
@@ -340,7 +337,7 @@ def _render_decision_cards(decisions: List[Any]) -> html.Div:
                 ),
             ], style={"display": "flex", "alignItems": "center"}) if is_pending else html.Div(
                 f"Resolved by {d.resolver or 'SYSTEM'} on {d.resolved_at or d.created_at[:10]}: {d.resolution_note or 'Auto-executed rule'}",
-                style={"fontSize": "0.75rem", "fontFamily": "var(--font-mono)", "color": "var(--text-muted)"}
+                style={"fontSize": "0.75rem", "color": "var(--text-muted)"}
             ),
         ], style={
             "backgroundColor": "var(--surface)",
@@ -360,11 +357,11 @@ def _render_audit_entries(entries: List[Any]) -> html.Div:
     rows = []
     for e in entries:
         rows.append(html.Tr([
-            html.Td(f"#{e.index}", style={"fontFamily": "var(--font-mono)", "fontSize": "0.78rem", "fontWeight": "600"}),
-            html.Td(e.timestamp[:19].replace("T", " "), style={"fontFamily": "var(--font-mono)", "fontSize": "0.75rem"}),
+            html.Td(f"#{e.index}", style={"fontSize": "0.78rem", "fontWeight": "600"}),
+            html.Td(e.timestamp[:19].replace("T", " "), style={"fontSize": "0.75rem"}),
             html.Td(e.event_type, style={"fontWeight": "600", "fontSize": "0.8rem", "color": "var(--accent)"}),
             html.Td(str(e.payload)[:60] + "...", style={"fontSize": "0.75rem", "color": "var(--text-muted)"}),
-            html.Td(e.record_hash[:16] + "...", style={"fontFamily": "var(--font-mono)", "fontSize": "0.75rem"}),
+            html.Td(e.record_hash[:16] + "...", style={"fontSize": "0.75rem"}),
         ], style={"borderBottom": "1px solid var(--border)", "padding": "6px 0"}))
 
     return html.Table([

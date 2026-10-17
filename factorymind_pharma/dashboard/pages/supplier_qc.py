@@ -1,7 +1,7 @@
 """
 dashboard/pages/supplier_qc.py — Dashboard 7 (Phase 2, §3.4)
 Supplier Risk & QC Anomaly monitoring.
-Reuses dashboard/assets/tokens.css unchanged.
+Redesigned v2: uses shared theme, no hardcoded hex.
 """
 
 import sys, os
@@ -13,17 +13,23 @@ import plotly.graph_objects as go
 import pandas as pd
 from pathlib import Path
 
+from dashboard.components.theme import CHART_COLORS, make_chart_layout
+from dashboard.components.header import render_page_header, PAGE_METADATA
+from dashboard.components.kpi import kpi_card
+
 dash.register_page(__name__, path="/supplier-qc", name="Supplier & QC", order=7)
+
+_META = PAGE_METADATA["/supplier-qc"]
 
 _BASE    = Path(__file__).parent.parent.parent
 _OUTPUTS = _BASE.parent / "data" / "outputs"
+
 
 def _load_supplier_risk() -> pd.DataFrame:
     p = _OUTPUTS / "supplier_risk_scores.parquet"
     if p.exists():
         df = pd.read_parquet(p, engine="pyarrow")
         if not df.empty and "supplier_id" in df.columns:
-            # Aggregate per supplier if multiple records exist per supplier
             if len(df) > df["supplier_id"].nunique():
                 supp_name_col = "supplier_name" if "supplier_name" in df.columns else "supplier_id"
                 agg_df = df.groupby("supplier_id").agg({
@@ -32,7 +38,6 @@ def _load_supplier_risk() -> pd.DataFrame:
                     "rejection_rate_pct_clean": "mean",
                     "risk_score": "mean",
                 }).reset_index()
-                # Recompute tier cleanly
                 agg_df["risk_tier"] = pd.cut(
                     agg_df["risk_score"],
                     bins=[-1, 33, 66, 101],
@@ -41,6 +46,7 @@ def _load_supplier_risk() -> pd.DataFrame:
                 return agg_df
         return df
     return pd.DataFrame()
+
 
 def _load_qc_scores() -> pd.DataFrame:
     p = _OUTPUTS / "qc_anomaly_scores.parquet"
@@ -51,13 +57,12 @@ def _load_qc_scores() -> pd.DataFrame:
         return df
     return pd.DataFrame()
 
+
+# ── Layout ────────────────────────────────────────────────────────────────
+
 layout = html.Div([
 
-    html.Div([
-        html.H1("Supplier Risk & QC Quality", className="page-title"),
-        html.P("Monitor supplier reliability and production quality anomalies · Phase 2",
-               className="page-subtitle"),
-    ], className="page-header"),
+    render_page_header(_META["subtitle"]),
 
     # KPI row
     html.Div(id="d7-kpi-row", className="kpi-row"),
@@ -66,17 +71,29 @@ layout = html.Div([
     html.Div([
         # Supplier Risk
         html.Div([
-            html.H2("Supplier Risk Profile", className="section-title"),
+            html.Div([
+                html.Div("Supplier Risk Profile", className="card-title"),
+                html.Div("Delivery reliability vs rejection rate · dot = supplier", className="card-meta"),
+            ], className="card-header"),
             dcc.Graph(id="d7-supplier-chart", config={"displayModeBar": False}),
-            html.H3("High Risk Suppliers", style={"marginTop": "24px", "fontSize": "0.95rem"}),
+            html.Div(style={"marginTop": "20px"}),
+            html.Div([
+                html.Div("High Risk Suppliers", className="card-title"),
+            ], className="card-header"),
             html.Div(id="d7-supplier-table"),
         ], className="card half-width"),
 
         # QC Anomalies
         html.Div([
-            html.H2("QC Anomaly Rates (Isolation Forest)", className="section-title"),
+            html.Div([
+                html.Div("QC Anomaly Rates (Isolation Forest)", className="card-title"),
+                html.Div("Negative scores = more anomalous", className="card-meta"),
+            ], className="card-header"),
             dcc.Graph(id="d7-qc-chart", config={"displayModeBar": False}),
-            html.H3("Recent Anomalous Batches", style={"marginTop": "24px", "fontSize": "0.95rem"}),
+            html.Div(style={"marginTop": "20px"}),
+            html.Div([
+                html.Div("Recent Anomalous Batches", className="card-title"),
+            ], className="card-header"),
             html.Div(id="d7-qc-table"),
         ], className="card half-width"),
     ], className="two-col-row"),
@@ -90,25 +107,27 @@ def kpi_row(_):
     qc_df   = _load_qc_scores()
 
     n_supp = len(supp_df)
-    high_risk_supp = len(supp_df[supp_df.get("risk_tier", "") == "High"]) if not supp_df.empty else 0
-
-    n_batches = len(qc_df)
-    n_anomalies = int(qc_df["anomaly_flag"].sum()) if not qc_df.empty and "anomaly_flag" in qc_df.columns else 0
-
-    kpis = [
-        ("Total Suppliers", f"{n_supp:,}", f"{high_risk_supp} high-risk monitored", "var(--text)"),
-        ("High Risk Suppliers", f"{high_risk_supp:,}", "Requires escalation" if high_risk_supp > 0 else "All compliant", "var(--danger)" if high_risk_supp > 0 else "var(--success)"),
-        ("Total QC Batches", f"{n_batches:,}", "Production lots tested", "var(--text)"),
-        ("Detected Anomalies", f"{n_anomalies:,}", "Flagged by Isolation Forest", "var(--warning)" if n_anomalies > 0 else "var(--success)"),
-    ]
+    high_risk_supp = (
+        len(supp_df[supp_df.get("risk_tier", pd.Series()) == "High"])
+        if not supp_df.empty else 0
+    )
+    n_batches   = len(qc_df)
+    n_anomalies = (int(qc_df["anomaly_flag"].sum())
+                   if not qc_df.empty and "anomaly_flag" in qc_df.columns else 0)
 
     return [
-        html.Div([
-            html.Div(label, className="kpi-label"),
-            html.Div(value, className="kpi-value", style={"color": color}),
-            html.Div(subtext, className="kpi-subtext"),
-        ], className="kpi-card")
-        for label, value, subtext, color in kpis
+        kpi_card("Total Suppliers", f"{n_supp:,}",
+                 f"{high_risk_supp} high-risk monitored", icon_name="layers", icon_cls="indigo"),
+        kpi_card("High Risk Suppliers", f"{high_risk_supp:,}",
+                 "Requires escalation — HIGH RISK" if high_risk_supp > 0 else "All suppliers compliant",
+                 color="var(--danger)" if high_risk_supp > 0 else "var(--success)",
+                 icon_name="alert", icon_cls="coral" if high_risk_supp > 0 else "green"),
+        kpi_card("Total QC Batches", f"{n_batches:,}",
+                 "Production lots tested", icon_name="chart", icon_cls="sky"),
+        kpi_card("Detected Anomalies", f"{n_anomalies:,}",
+                 "Flagged by Isolation Forest — INVESTIGATE" if n_anomalies > 0 else "No anomalies detected",
+                 color="var(--warning)" if n_anomalies > 0 else "var(--text)",
+                 icon_name="trend", icon_cls="amber" if n_anomalies > 0 else "green"),
     ]
 
 
@@ -118,14 +137,22 @@ def supplier_scatter(_):
     if df.empty:
         return go.Figure()
 
-    supp_id_col = next((c for c in ["supplier_name", "supplier_id", "id"] if c in df.columns), df.columns[0])
-    
-    if "rejection_rate_pct_clean" not in df.columns or "delivery_unreliability_pct" not in df.columns:
+    supp_id_col = next(
+        (c for c in ["supplier_name", "supplier_id", "id"] if c in df.columns),
+        df.columns[0],
+    )
+
+    if ("rejection_rate_pct_clean" not in df.columns or
+            "delivery_unreliability_pct" not in df.columns):
         return go.Figure()
 
     fig = go.Figure()
-    
-    for tier, color in [("High", "#8B2E2E"), ("Medium", "#9A6B1A"), ("Low", "#3D7A4F")]:
+    tier_colours = {
+        "High":   CHART_COLORS["chart_3"],
+        "Medium": CHART_COLORS["chart_4"],
+        "Low":    CHART_COLORS["chart_5"],
+    }
+    for tier, colour in tier_colours.items():
         subset = df[df["risk_tier"] == tier]
         if subset.empty:
             continue
@@ -136,47 +163,29 @@ def supplier_scatter(_):
             name=f"{tier} Risk",
             text=subset["supplier_id"],
             textposition="top center",
-            textfont=dict(family="Inter, sans-serif", size=10, color="#6B6560"),
+            textfont=dict(family="Inter, sans-serif", size=10,
+                          color=CHART_COLORS["muted"]),
             marker=dict(
                 size=14,
-                color=color,
+                color=colour,
                 opacity=0.88,
-                line=dict(width=1.5, color="#1C1B1A")
+                line=dict(width=1.5, color=CHART_COLORS["text"]),
             ),
             hovertemplate=(
-                "<b>%{customdata[0]} (%{text})</b><br>"
-                "Risk Tier: " + tier + "<br>"
+                f"<b>%{{customdata[0]}}</b> ({tier} Risk)<br>"
                 "Delivery Unreliability: %{x:.1f}%<br>"
                 "Rejection Rate: %{y:.2f}%<br>"
                 "Risk Score: %{customdata[1]:.1f}/100<extra></extra>"
             ),
-            customdata=subset[[supp_id_col, "risk_score"]].values
+            customdata=subset[[supp_id_col, "risk_score"]].values,
         ))
-    
-    fig.update_layout(
-        paper_bgcolor="#FDFBF7",
-        plot_bgcolor="#FDFBF7",
-        font={"family": "Inter, sans-serif", "color": "#1C1B1A"},
-        xaxis=dict(
-            title="Delivery Unreliability %",
-            gridcolor="#DDD9D1",
-            zerolinecolor="#DDD9D1",
-        ),
-        yaxis=dict(
-            title="Rejection Rate %",
-            gridcolor="#DDD9D1",
-            zerolinecolor="#DDD9D1",
-        ),
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.02,
-            xanchor="right",
-            x=1,
-            font=dict(family="Inter, sans-serif", size=11),
-        ),
-        margin={"l": 50, "r": 20, "t": 30, "b": 45},
+
+    layout = make_chart_layout(
+        height=300,
+        xaxis_title="Delivery Unreliability %",
+        yaxis_title="Rejection Rate %",
     )
+    fig.update_layout(**layout)
     return fig
 
 
@@ -184,21 +193,36 @@ def supplier_scatter(_):
 def supplier_table(_):
     df = _load_supplier_risk()
     if df.empty:
-        return html.P("No data.")
+        return html.Div([
+            html.Div("◈", className="empty-state-icon"),
+            html.Div("No supplier data", className="empty-state-title"),
+        ], className="empty-state")
 
-    supp_id_col = next((c for c in ["supplier_id", "supplier_name", "id"] if c in df.columns), df.columns[0])
+    supp_id_col = next(
+        (c for c in ["supplier_id", "supplier_name", "id"] if c in df.columns),
+        df.columns[0],
+    )
     df_show = df.sort_values("risk_score", ascending=False).head(5)
-    
+
+    rows = []
+    for _, row in df_show.iterrows():
+        tier = str(row.get("risk_tier", "–"))
+        tier_badge = (
+            html.Span([html.Span("⬥ "), tier], className="tier-chip tier-block")
+            if tier == "High" else
+            html.Span([html.Span("◆ "), tier], className="tier-chip tier-review")
+            if tier == "Medium" else
+            html.Span([html.Span("◇ "), tier], className="tier-chip tier-auto")
+        )
+        rows.append(html.Tr([
+            html.Td(str(row[supp_id_col]), style={"fontWeight": "600"}),
+            html.Td(f"{row['risk_score']:.1f}", style={"textAlign": "right", "fontWeight": "700"}),
+            html.Td(tier_badge),
+        ]))
+
     return html.Table([
         html.Thead(html.Tr([html.Th("Supplier"), html.Th("Risk Score"), html.Th("Tier")])),
-        html.Tbody([
-            html.Tr([
-                html.Td(str(row[supp_id_col])),
-                html.Td(f"{row['risk_score']:.1f}"),
-                html.Td(str(row.get("risk_tier", "–")), style={"color": "var(--danger)" if row.get("risk_tier") == "High" else "inherit"}),
-            ])
-            for _, row in df_show.iterrows()
-        ])
+        html.Tbody(rows),
     ], className="data-table")
 
 
@@ -209,35 +233,30 @@ def qc_chart(_):
         return go.Figure()
 
     fig = go.Figure()
-    
-    # Histogram of anomaly scores
     fig.add_trace(go.Histogram(
         x=df["anomaly_score"],
         nbinsx=30,
-        marker_color="#2D7D7B",
+        marker_color=CHART_COLORS["chart_1"],
+        marker_line_width=0,
         name="Batches",
     ))
-    
-    # The IsolationForest threshold is 0.0 generally, or where predict==-1
-    fig.add_vline(x=0, line_dash="dash", line_color="#8B2E2E",
-                  annotation_text="Anomaly Threshold", annotation_position="top left",
-                  annotation_font=dict(family="Inter, sans-serif", color="#8B2E2E", size=11))
-                  
-    fig.update_layout(
-        paper_bgcolor="#FDFBF7",
-        plot_bgcolor="#FDFBF7",
-        font={"family": "Inter, sans-serif", "color": "#1C1B1A"},
-        xaxis=dict(
-            title="Anomaly Score (More negative = more anomalous)",
-            gridcolor="#DDD9D1",
-        ),
-        yaxis=dict(
-            title="Count",
-            gridcolor="#DDD9D1",
-        ),
-        showlegend=False,
-        margin={"l": 50, "r": 20, "t": 20, "b": 40},
+    fig.add_vline(
+        x=0,
+        line_dash="dash",
+        line_color=CHART_COLORS["chart_3"],
+        annotation_text="Anomaly Threshold",
+        annotation_position="top left",
+        annotation_font=dict(family="Inter, sans-serif",
+                             color=CHART_COLORS["chart_3"], size=11),
     )
+
+    layout = make_chart_layout(
+        height=280,
+        xaxis_title="Anomaly Score (more negative = more anomalous)",
+        yaxis_title="Count",
+    )
+    layout["showlegend"] = False
+    fig.update_layout(**layout)
     return fig
 
 
@@ -245,24 +264,32 @@ def qc_chart(_):
 def qc_table(_):
     df = _load_qc_scores()
     if df.empty or "anomaly_flag" not in df.columns:
-        return html.P("No data.")
+        return html.P("No data.", className="text-muted")
 
-    anomalies = df[df["anomaly_flag"] == 1].sort_values("anomaly_score", ascending=True).head(5)
+    anomalies = (df[df["anomaly_flag"] == 1]
+                 .sort_values("anomaly_score", ascending=True)
+                 .head(5))
     if anomalies.empty:
-        return html.P("No recent anomalies detected.", style={"color": "var(--success)"})
-        
-    batch_col = next((c for c in ["batch_id", "order_id"] if c in df.columns), df.columns[0])
-    
+        return html.Div([
+            html.Span("✓ ", style={"color": "var(--success)", "fontWeight": "700"}),
+            html.Span("No recent anomalies detected.", style={"color": "var(--success)"}),
+        ], style={"fontSize": "0.82rem", "padding": "8px 0"})
+
+    batch_col = next(
+        (c for c in ["batch_id", "order_id"] if c in df.columns),
+        df.columns[0],
+    )
     cols = [batch_col, "assay_pct", "dissolution_pct", "impurity_level", "anomaly_score"]
     show_cols = [c for c in cols if c in anomalies.columns]
-    
+
     return html.Table([
         html.Thead(html.Tr([html.Th(c.replace("_", " ").title()) for c in show_cols])),
         html.Tbody([
             html.Tr([
-                html.Td(f"{row[c]:.2f}" if isinstance(row[c], float) else str(row[c]))
+                html.Td(f"{row[c]:.2f}" if isinstance(row[c], float) else str(row[c]),
+                        style={"textAlign": "right"} if isinstance(row[c], (int, float)) else {})
                 for c in show_cols
-            ])
+            ], style={"background": "var(--danger-pale)"})
             for _, row in anomalies.iterrows()
-        ])
+        ]),
     ], className="data-table")

@@ -2,6 +2,7 @@
 dashboard/pages/scenario_lab.py — Dashboard 10 (Phase 4)
 Digital Twin Scenario Lab: Monte Carlo shock builder, fan charts,
 ranked mitigations, and assumptions drawer per Spec §5.6.
+Strict tokens.css compliance with zero hardcoded hex.
 """
 import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
@@ -21,8 +22,13 @@ from factorymind_pharma.contracts.scenario import (
     ColdChainEvent,
     QualityShift,
 )
+from dashboard.components.theme import CHART_COLORS, make_chart_layout
+from dashboard.components.header import render_page_header, PAGE_METADATA
+from dashboard.components.kpi import kpi_card
 
 dash.register_page(__name__, path="/scenario-lab", name="Scenario Lab", order=10)
+
+_META = PAGE_METADATA["/scenario-lab"]
 
 _BASE = Path(__file__).parent.parent.parent
 _CONFIG_PATH = _BASE / "configs" / "twin.yaml"
@@ -36,16 +42,18 @@ def _load_assumptions():
 
 
 layout = html.Div([
-    html.Div([
-        html.H1("Scenario Lab (Digital Twin)", className="page-title"),
-        html.P("Phase 4 · Stochastic Monte Carlo 'what-if' simulation with Common Random Numbers and ranked mitigations.",
-               className="page-subtitle"),
-    ], className="page-header"),
+    render_page_header(_META["subtitle"]),
 
+    # Clear 3-Panel Layout (§5.6)
+    # Panel 1: Scenario Builder | Panel 2: Simulation Results
     html.Div([
-        # Left: Scenario Builder Form
+        # Panel 1: Scenario Builder Form
         html.Div([
-            html.H2("Scenario Builder", className="section-title"),
+            html.Div([
+                html.Span(className="icon-mask icon-sliders", style={"color": "var(--accent)", "marginRight": "8px"}),
+                html.H2("1. Scenario Builder", className="section-title", style={"margin": "0"}),
+            ], style={"display": "flex", "alignItems": "center", "marginBottom": "16px"}),
+
             html.Label("Horizon (days)", className="control-label"),
             dcc.Dropdown(
                 id="d10-horizon",
@@ -55,7 +63,7 @@ layout = html.Div([
                 className="dropdown",
             ),
 
-            html.Label("Primary Shock Type", className="control-label", style={"marginTop": "12px"}),
+            html.Label("Primary Shock Type", className="control-label", style={"marginTop": "14px"}),
             dcc.Dropdown(
                 id="d10-shock-type",
                 options=[
@@ -70,17 +78,16 @@ layout = html.Div([
                 className="dropdown",
             ),
 
-            html.Label("Target Identifier", className="control-label", style={"marginTop": "12px"}),
+            html.Label("Target Identifier", className="control-label", style={"marginTop": "14px"}),
             dcc.Input(
                 id="d10-target-id",
                 type="text",
                 value="S004",
                 placeholder="e.g. S004, M001, P0001",
                 className="text-input",
-                style={"width": "100%", "padding": "8px", "borderRadius": "4px", "border": "1px solid var(--border)"},
             ),
 
-            html.Label("Number of Monte Carlo Paths", className="control-label", style={"marginTop": "12px"}),
+            html.Label("Number of Monte Carlo Paths", className="control-label", style={"marginTop": "14px"}),
             dcc.Slider(
                 id="d10-paths",
                 min=100,
@@ -95,27 +102,45 @@ layout = html.Div([
                 id="d10-run-btn",
                 n_clicks=0,
                 className="btn btn-primary",
-                style={"marginTop": "20px", "width": "100%", "padding": "10px", "cursor": "pointer"},
+                style={"marginTop": "22px", "width": "100%"},
             ),
 
-            html.Div(id="d10-run-status", style={"marginTop": "10px", "fontSize": "12px", "color": "var(--text-muted)"}),
+            html.Div(id="d10-run-status", style={"marginTop": "12px", "fontSize": "0.78rem", "color": "var(--text-muted)"}),
         ], className="card one-third-width"),
 
-        # Center: Simulation Fan Charts & KPIs
+        # Panel 2: Simulation Results
         html.Div([
-            html.H2("Simulation Results (Baseline vs Shocked)", className="section-title"),
-            html.Div(id="d10-metrics-strip", className="kpi-row", style={"marginBottom": "16px"}),
-            dcc.Graph(id="d10-fan-chart", config={"displayModeBar": False}),
+            html.Div([
+                html.Span(className="icon-mask icon-chart", style={"color": "var(--accent)", "marginRight": "8px"}),
+                html.H2("2. Simulation Results (Baseline vs Shocked)", className="section-title", style={"margin": "0"}),
+            ], style={"display": "flex", "alignItems": "center", "marginBottom": "16px"}),
+
+            dcc.Loading(
+                html.Div([
+                    html.Div(id="d10-metrics-strip", className="kpi-row", style={"marginBottom": "16px"}),
+                    dcc.Graph(id="d10-fan-chart", config={"displayModeBar": False}),
+                ]),
+                color="var(--accent)",
+                type="dot",
+            ),
         ], className="card two-thirds-width"),
     ], className="two-col-row"),
 
-    # Row 2: Ranked Mitigations
+    # Panel 3: Ranked Mitigations
     html.Div([
-        html.H2("Ranked Mitigations (Evaluated via Re-Simulation)", className="section-title"),
-        html.Div(id="d10-mitigation-table", style={"overflowX": "auto"}),
+        html.Div([
+            html.Span(className="icon-mask icon-shield", style={"color": "var(--success)", "marginRight": "8px"}),
+            html.H2("3. Ranked Mitigations (Evaluated via Re-Simulation)", className="section-title", style={"margin": "0"}),
+        ], style={"display": "flex", "alignItems": "center", "marginBottom": "16px"}),
+
+        dcc.Loading(
+            html.Div(id="d10-mitigation-table", style={"overflowX": "auto"}),
+            color="var(--accent)",
+            type="dot",
+        ),
     ], className="card"),
 
-    # Row 3: Assumptions Drawer (tagged assumed | fitted per §4.2)
+    # Row 4: Assumptions Drawer (tagged assumed | fitted per §4.2)
     html.Div([
         html.H2("Model Assumptions & Topology (Audited)", className="section-title"),
         html.Div(id="d10-assumptions-drawer", className="card-body"),
@@ -140,7 +165,6 @@ layout = html.Div([
     ],
 )
 def run_simulation(n_clicks, horizon, shock_type, target_id, n_paths):
-    # Default scenario
     shocks = []
     target_id = target_id.strip() if target_id else "S004"
 
@@ -167,19 +191,17 @@ def run_simulation(n_clicks, horizon, shock_type, target_id, n_paths):
     res = _sim.run_scenario(sc)
 
     # 1. Metrics Strip
-    metrics = [
-        ("Profit Delta vs Baseline", f"${res.profit_delta:+,.0f}", "Scenario financial divergence", "var(--danger)" if res.profit_delta < 0 else "var(--success)"),
-        ("Profit-at-Risk (PaR P5)", f"${res.profit_at_risk_p5:,.0f}", "95% confidence downside", "var(--warning)"),
-        ("Fill Rate (Baseline → Shock)", f"{res.baseline_metrics.fill_rate_p50*100:.1f}% → {res.shocked_metrics.fill_rate_p50*100:.1f}%", "Order fulfillment impact", "var(--text)"),
-        ("Stockout Risk Change", f"{res.p_stockout_delta*100:+.2f}%", "Probability shift", "var(--danger)" if res.p_stockout_delta > 0 else "var(--success)"),
-    ]
     metrics_strip = [
-        html.Div([
-            html.Div(lbl, className="kpi-label"),
-            html.Div(val, className="kpi-value", style={"color": col}),
-            html.Div(sub, className="kpi-subtext"),
-        ], className="kpi-card")
-        for lbl, val, col, sub in metrics
+        kpi_card("Profit Delta vs Baseline", f"${res.profit_delta:+,.0f}", "Scenario financial divergence",
+                 color="var(--danger)" if res.profit_delta < 0 else "var(--success)",
+                 icon_name="chart", icon_cls="coral" if res.profit_delta < 0 else "green"),
+        kpi_card("Profit-at-Risk (PaR P5)", f"${res.profit_at_risk_p5:,.0f}", "95% confidence downside",
+                 color="var(--warning)", icon_name="alert", icon_cls="amber"),
+        kpi_card("Fill Rate (Base → Shock)", f"{res.baseline_metrics.fill_rate_p50*100:.1f}% → {res.shocked_metrics.fill_rate_p50*100:.1f}%",
+                 "Order fulfillment impact", icon_name="trend", icon_cls="teal"),
+        kpi_card("Stockout Risk Change", f"{res.p_stockout_delta*100:+.2f}%", "Probability shift",
+                 color="var(--danger)" if res.p_stockout_delta > 0 else "var(--success)",
+                 icon_name="trend", icon_cls="coral" if res.p_stockout_delta > 0 else "green"),
     ]
 
     # 2. Fan Chart: Fill Rate & P(Stockout)
@@ -193,7 +215,7 @@ def run_simulation(n_clicks, horizon, shock_type, target_id, n_paths):
             res.baseline_metrics.fill_rate_p95 * 100,
             res.baseline_metrics.p_stockout_mean * 100,
         ],
-        marker_color="var(--chart-1)",
+        marker_color=CHART_COLORS["chart_1"],
     ))
     fig.add_trace(go.Bar(
         name="Shocked Scenario",
@@ -204,29 +226,33 @@ def run_simulation(n_clicks, horizon, shock_type, target_id, n_paths):
             res.shocked_metrics.fill_rate_p95 * 100,
             res.shocked_metrics.p_stockout_mean * 100,
         ],
-        marker_color="var(--chart-5)",
+        marker_color=CHART_COLORS["chart_3"],
     ))
 
-    fig.update_layout(
-        barmode="group",
-        paper_bgcolor="var(--surface)",
-        plot_bgcolor="var(--surface)",
-        font={"family": "Inter, sans-serif", "color": "var(--text)"},
+    layout = make_chart_layout(
+        title="Key Performance Metrics — Baseline vs Shocked",
+        height=320,
         yaxis_title="Percentage (%)",
-        margin={"l": 40, "r": 20, "t": 20, "b": 40},
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        margin={"l": 45, "r": 20, "t": 40, "b": 40},
     )
+    layout["barmode"] = "group"
+    fig.update_layout(**layout)
 
-    # 3. Ranked Mitigations Table
     mit_rows = []
     for rank, m in enumerate(res.ranked_mitigations, start=1):
         mit_rows.append(html.Tr([
-            html.Td(str(rank)),
-            html.Td(m.name),
+            html.Td(str(rank), style={"fontWeight": "700"}),
+            html.Td(m.name, style={"fontWeight": "600"}),
             html.Td(m.description),
-            html.Td(f"{m.assumed_cost:,.0f} (assumed)"),
-            html.Td(f"{m.expected_profit_saved:+,.0f}", style={"color": "var(--success)" if m.expected_profit_saved > 0 else "var(--text)"}),
-            html.Td(f"{m.p_stockout_delta*100:+.2f}%", style={"color": "var(--success)" if m.p_stockout_delta < 0 else "var(--text)"}),
+            html.Td(f"${m.assumed_cost:,.0f} (assumed)", style={"textAlign": "right"}),
+            html.Td(
+                f"${m.expected_profit_saved:+,.0f}",
+                style={"color": "var(--success)" if m.expected_profit_saved > 0 else "var(--text)", "fontWeight": "600", "textAlign": "right"},
+            ),
+            html.Td(
+                f"{m.p_stockout_delta*100:+.2f}%",
+                style={"color": "var(--success)" if m.p_stockout_delta < 0 else "var(--text)", "fontWeight": "600", "textAlign": "right"},
+            ),
         ]))
 
     mit_table = html.Table([
@@ -234,7 +260,7 @@ def run_simulation(n_clicks, horizon, shock_type, target_id, n_paths):
             html.Th("Rank"),
             html.Th("Mitigation Action"),
             html.Th("Operational Mechanism"),
-            html.Th("Cost"),
+            html.Th("Assumed Cost"),
             html.Th("Expected Profit Saved"),
             html.Th("Stockout Risk Δ"),
         ])),
@@ -255,11 +281,11 @@ def render_assumptions(_):
         ("Machine Topology", top.get("machine_line_mapping_rule"), top.get("machine_line_mapping_source", "assumed")),
         ("Warehouse Network", top.get("warehouses", {}).get("network_structure"), top.get("warehouses", {}).get("network_source", "assumed")),
         ("QC Retest Delay", f"{params.get('retest_delay_days', {}).get('value')} days", params.get("retest_delay_days", {}).get("source", "assumed")),
-        ("Holding Cost Proxy", f"{params.get('holding_cost_per_unit_day', {}).get('value')} / unit-day", params.get("holding_cost_per_unit_day", {}).get("source", "assumed")),
+        ("Holding Cost Proxy", f"${params.get('holding_cost_per_unit_day', {}).get('value')} / unit-day", params.get("holding_cost_per_unit_day", {}).get("source", "assumed")),
         ("Transfer Lead Time", f"{params.get('transfer_lead_time_days', {}).get('value')} days", params.get("transfer_lead_time_days", {}).get("source", "assumed")),
-        ("Transfer Cost", f"{params.get('transfer_cost_per_unit', {}).get('value')} / unit", params.get("transfer_cost_per_unit", {}).get("source", "assumed")),
-        ("Expedite Cost", f"{params.get('raw_material_expedite_cost', {}).get('value')} / shipment", params.get("raw_material_expedite_cost", {}).get("source", "assumed")),
-        ("Maintenance Cost", f"{params.get('maintenance_pull_forward_cost', {}).get('value')} / event", params.get("maintenance_pull_forward_cost", {}).get("source", "assumed")),
+        ("Transfer Cost", f"${params.get('transfer_cost_per_unit', {}).get('value')} / unit", params.get("transfer_cost_per_unit", {}).get("source", "assumed")),
+        ("Expedite Cost", f"${params.get('raw_material_expedite_cost', {}).get('value')} / shipment", params.get("raw_material_expedite_cost", {}).get("source", "assumed")),
+        ("Maintenance Cost", f"${params.get('maintenance_pull_forward_cost', {}).get('value')} / event", params.get("maintenance_pull_forward_cost", {}).get("source", "assumed")),
         ("Cold-Chain Excursion Rate", f"{params.get('cold_chain_excursion_rate', {}).get('value')*100:.2f}%", params.get("cold_chain_excursion_rate", {}).get("source", "fitted")),
     ]
 
@@ -267,18 +293,20 @@ def render_assumptions(_):
         html.Thead(html.Tr([html.Th("Parameter"), html.Th("Specification Value"), html.Th("Source Provenance Tag")])),
         html.Tbody([
             html.Tr([
-                html.Td(p_name),
-                html.Td(p_val),
+                html.Td(p_name, style={"fontWeight": "500"}),
+                html.Td(p_val, className="mono"),
                 html.Td(
                     html.Span(
                         f"[{p_src.upper()}]",
+                        className="badge-tag",
                         style={
-                            "padding": "2px 8px",
-                            "borderRadius": "4px",
-                            "fontSize": "11px",
-                            "fontWeight": "600",
-                            "backgroundColor": "var(--surface-sunken)" if p_src == "fitted" else "var(--border)",
+                            "backgroundColor": "var(--primary-pale)" if p_src == "fitted" else "var(--surface-alt)",
                             "color": "var(--primary)" if p_src == "fitted" else "var(--text-muted)",
+                            "border": "1px solid var(--border)",
+                            "borderRadius": "var(--radius-sm)",
+                            "padding": "2px 8px",
+                            "fontSize": "0.75rem",
+                            "fontWeight": "600",
                         },
                     )
                 ),
